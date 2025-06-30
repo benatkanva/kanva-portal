@@ -195,10 +195,8 @@ class KanvaApp {
         // Set up responsive behavior
         this.setupResponsiveUI();
         
-        // Add initial product line if none exists
-        if (this.calculator && (!this.calculator.lineItems || this.calculator.lineItems.length === 0)) {
-            this.calculator.addProductLine();
-        }
+        // Don't add empty line items on startup
+        // Users will add products by clicking on product tiles
     }
 
     /**

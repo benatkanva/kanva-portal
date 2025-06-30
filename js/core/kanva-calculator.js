@@ -81,6 +81,9 @@ class KanvaCalculator {
 
     // Core calculation methods
     calculateAll() {
+        // Clean up lineItems array first
+        this.cleanupLineItems();
+        
         this.quote = this.resetQuote();
         this.calculationEngine.calculateLineItems(this.lineItems, this.quote, this.dataManager.getData());
         this.calculationEngine.calculateShipping(this.quote, this.currentShippingZone, this.dataManager.getData());
@@ -89,11 +92,54 @@ class KanvaCalculator {
         
         this.uiManager.updateCalculationDisplay(this.quote);
     }
+    
+    // Clean up lineItems array to remove any DOM elements
+    cleanupLineItems() {
+        if (!this.lineItems) return;
+        
+        const originalLength = this.lineItems.length;
+        
+        // Filter out DOM elements, keep only data objects with ID
+        this.lineItems = this.lineItems.filter(item => {
+            // Check if it's a proper data object (not a DOM element)
+            const isDataObject = item && typeof item === 'object' && 
+                                !(item instanceof HTMLElement) && 
+                                typeof item.id === 'string';
+            
+            if (!isDataObject) {
+                console.log('🗑️ Removing invalid item from lineItems:', item);
+            }
+            
+            return isDataObject;
+        });
+        
+        if (originalLength !== this.lineItems.length) {
+            console.log(`✨ Cleaned lineItems array: ${originalLength} → ${this.lineItems.length} items`);
+        }
+    }
 
     // Line item management
     addProductLine() {
-        const newLine = ProductManager.createProductLine();
-        this.lineItems.push(newLine);
+        console.log('⚠️ addProductLine called - this should not be used');
+        console.log('⚠️ Use ProductManager.addProductToQuote() instead');
+        
+        // Don't push DOM elements into lineItems array
+        // ProductManager.createProductLine() returns a DOM element, not data
+        // The lineItems array should only contain data objects
+        
+        // Create a minimal line item data object instead
+        const lineId = `line_${Date.now()}`;
+        const newLineData = {
+            id: lineId,
+            productKey: '',
+            masterCases: 1,
+            displayBoxes: 12,
+            units: 0,
+            unitPrice: 0,
+            total: 0
+        };
+        
+        this.lineItems.push(newLineData);
         this.uiManager.renderProductLines(this.lineItems);
     }
 

@@ -52,6 +52,7 @@ class CSSLoader {
             'forms',
             'modals',
             'notifications',
+            'order-details-table',
             'product-tile',
             'tables',
             'tabs'

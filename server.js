@@ -4,7 +4,7 @@ const path = require('path');
 const url = require('url');
 
 // Ensure consistent application root directory regardless of where the server is started from
-const APP_ROOT = __dirname.includes('kanva-quotes') ? __dirname : path.join(__dirname, 'kanva-quotes');
+const APP_ROOT = __dirname;
 
 const PORT = process.env.PORT || 3000;
 

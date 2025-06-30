@@ -14,10 +14,11 @@ class EventManager {
         
         // Product line events
         document.addEventListener('click', (e) => {
-            // Add product line
+            // Add product line - deprecated, use ProductManager.addProductToQuote instead
             if (e.target.matches('#addProductBtn')) {
                 e.preventDefault();
-                this.calculator.addProductLine();
+                console.log('⚠️ #addProductBtn clicked - this button should not be used');
+                console.log('⚠️ Use product tiles to add products instead');
             }
             
             // Remove product line

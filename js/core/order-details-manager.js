@@ -82,7 +82,7 @@ class OrderDetailsManager {
                         <strong>$${item.lineTotal.toFixed(2)}</strong>
                     </td>
                     <td class="col-actions">
-                        <button class="btn-delete-line" onclick="calculator.deleteLineItem('${item.id}')" 
+                        <button class="btn-delete-line" onclick="calculator.deleteLineItem('${item.id}')">×</button> 
                                 title="Delete this line item">
                             ×
                         </button>

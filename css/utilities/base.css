@@ -16,6 +16,36 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Main App Container */
+.calculator-container {
+  max-width: 1200px;
+  margin: 80px auto 2rem auto;
+  /* CUSTOMIZE MARGINS HERE: Change '0.25rem' to adjust left/right spacing */
+  padding: 0 0.25rem;
+  min-height: calc(100vh - 100px);
+}
+
+/* Add breathing room between sections */
+.calculator-container > .card {
+  margin-bottom: 2.5rem;
+}
+
+.calculator-container > .card:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .calculator-container {
+    /* CUSTOMIZE MOBILE MARGINS HERE: Change '0.75rem' for mobile left/right spacing */
+    padding: 0 0.75rem;
+    margin: 80px auto 1rem auto;
+  }
+  
+  .calculator-container > .card {
+    margin-bottom: 1.5rem;
+  }
+}
+
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   color: var(--color-secondary);

@@ -88,15 +88,73 @@
   margin-right: 0.5rem;
 }
 
+/* Specific styling for Unit Price field - make it wider for readability */
+.product-line-input-group:nth-child(3) {
+  width: 110px;
+}
+
+/* Specific styling for Line Total field - make it wider for readability */
+.product-line-input-group:last-child {
+  width: 130px;
+}
+
 .product-line-delete {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
 }
 
-.product-line-item .form-control-sm,
+/* Modern red X delete button styling */
+.product-line-delete .btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background-color: #dc3545;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+  transition: all 0.2s ease;
+  padding: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.product-line-delete .btn:hover {
+  background-color: #c82333;
+  color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+  opacity: 1;
+}
+
+.product-line-delete .btn:active {
+  transform: scale(0.95);
+}
+
+.product-line-delete .btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
+}
+
+/* Override small form controls to be more readable */
+.product-line-item .form-control-sm {
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 38px;
+  line-height: 1.4;
+}
+
 .product-line-item .input-group-sm {
-  font-size: 0.875rem;
+  font-size: 1rem;
+}
+
+.product-line-item .input-group-sm .form-control {
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 38px;
 }
 
 .product-line-item .form-label {

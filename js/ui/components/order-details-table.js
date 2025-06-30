@@ -29,23 +29,31 @@ class OrderDetailsTable {
         }        
     }
 
+
+    
     /**
      * Create the table element
      * @param {Array} lineItems 
      * @returns {HTMLElement}
      */
     create(lineItems = []) {
+        console.log('📋 OrderDetailsTable.create called with:', lineItems.length, 'items');
+        console.log('📋 Line items data:', lineItems);
+        
         this.lineItems = lineItems;
         
         const container = document.createElement('div');
         container.className = 'order-details-table-container';
         
         if (!lineItems.length) {
+            console.log('📋 No line items, showing empty state');
             container.innerHTML = this.createEmptyState();
             this.element = container;
             return container;
         }
 
+        console.log('📋 Creating table with', lineItems.length, 'line items');
+        
         container.innerHTML = `
             <div class="card">
                 <div class="card-header">
@@ -64,6 +72,8 @@ class OrderDetailsTable {
 
         this.element = container;
         this.attachEventListeners();
+        
+        console.log('✅ OrderDetailsTable created successfully, container element:', container);
         return container;
     }
 
@@ -196,16 +206,22 @@ class OrderDetailsTable {
      * @returns {string}
      */
     createActionsColumn(item) {
-        return `
+        console.log('🔧 Creating action column for item ID:', item.id);
+        
+        const buttonHtml = `
             <td class="text-center">
                 <button type="button" 
                         class="btn btn-sm btn-outline-danger remove-line-item" 
                         data-line-id="${item.id}"
-                        title="Remove item">
-                    <i class="fas fa-times"></i>
+                        title="Remove item"
+                        style="border: 2px solid #dc3545; color: #dc3545; background: white; padding: 0.25rem 0.5rem; cursor: pointer;">
+                    <i class="fas fa-times"></i> Delete
                 </button>
             </td>
         `;
+        
+        console.log('🔧 Generated button HTML:', buttonHtml);
+        return buttonHtml;
     }
 
     /**
@@ -214,8 +230,41 @@ class OrderDetailsTable {
      * @returns {Object}
      */
     getProductData(item) {
-        const products = window.calculator?.dataManager?.getProducts() || {};
-        return products[item.productKey] || item.productData || {};
+        // Try multiple paths to get product data
+        let products = null;
+        
+        // First try: calculator.dataManager.getProducts()
+        if (window.calculator?.dataManager?.getProducts) {
+            products = window.calculator.dataManager.getProducts();
+        }
+        // Second try: calculator.dataManager.products
+        else if (window.calculator?.dataManager?.products) {
+            products = window.calculator.dataManager.products;
+        }
+        // Third try: calculator.dataManager.data.products
+        else if (window.calculator?.dataManager?.data?.products) {
+            products = window.calculator.dataManager.data.products;
+        }
+        
+        // Get product by key or use embedded product data
+        let product = {};
+        if (products && item.productKey) {
+            product = products[item.productKey] || {};
+        }
+        
+        // Merge with any embedded product data
+        if (item.productData) {
+            product = { ...product, ...item.productData };
+        }
+        
+        console.log('🔍 Product data lookup:', {
+            productKey: item.productKey,
+            productsAvailable: !!products,
+            productFound: !!product.name,
+            product: product
+        });
+        
+        return product;
     }
 
     /**
@@ -225,14 +274,35 @@ class OrderDetailsTable {
      */
     calculateQuantities(item) {
         const masterCases = item.masterCases || 0;
-        const displayBoxes = masterCases * 12; // 12 boxes per case
-        const totalUnits = displayBoxes * 12;  // 12 units per box
-
-        return {
+        
+        // Get product data for accurate calculations
+        const product = this.getProductData(item);
+        
+        // Use product configuration for calculations
+        const displayBoxesPerCase = product.displayBoxesPerCase || 12;
+        const unitsPerDisplayBox = product.unitsPerDisplayBox || 12;
+        const unitsPerCase = product.unitsPerCase || (displayBoxesPerCase * unitsPerDisplayBox);
+        
+        // Calculate quantities based on master cases
+        const displayBoxes = masterCases * displayBoxesPerCase;
+        const totalUnits = masterCases * unitsPerCase;
+        
+        const result = {
             masterCases,
             displayBoxes,
             totalUnits
         };
+        
+        console.log('🧮 Quantity calculation:', {
+            productKey: item.productKey,
+            masterCases,
+            displayBoxesPerCase,
+            unitsPerDisplayBox,
+            unitsPerCase,
+            result
+        });
+
+        return result;
     }
 
     /**
@@ -241,18 +311,29 @@ class OrderDetailsTable {
      * @returns {Object}
      */
     calculatePricing(item) {
-        const quantities = this.calculateQuantities(item);
         const product = this.getProductData(item);
+        const quantities = this.calculateQuantities(item);
         
-        // Get tier-adjusted pricing if available
-        const tierPrice = this.getTierAdjustedPrice(product, item);
-        const unitPrice = tierPrice || product.pricing?.unit || 0;
+        // Use the actual unit price from the item or product
+        const unitPrice = item.unitPrice || product.price || 0;
+        
+        // Calculate line total using the correct total units
         const lineTotal = quantities.totalUnits * unitPrice;
-
-        return {
+        
+        const result = {
             unitPrice: unitPrice.toFixed(2),
             lineTotal: lineTotal.toFixed(2)
         };
+        
+        console.log('💰 Pricing calculation:', {
+            productKey: item.productKey,
+            unitPrice,
+            totalUnits: quantities.totalUnits,
+            lineTotal,
+            result
+        });
+
+        return result;
     }
 
     /**
@@ -284,16 +365,29 @@ class OrderDetailsTable {
      * Attach event listeners
      */
     attachEventListeners() {
-        if (!this.element) return;
+        if (!this.element) {
+            console.error('🚫 OrderDetailsTable.attachEventListeners: No element found');
+            return;
+        }
 
-        // Remove item buttons
+        console.log('🎯 Attaching event listeners to OrderDetailsTable element:', this.element);
+
+        // Remove item buttons - add debugging
         this.element.addEventListener('click', (e) => {
+            console.log('💆 OrderDetailsTable click event:', e.target);
+            
             if (e.target.closest('.remove-line-item')) {
+                console.log('🎯 Delete button clicked!');
                 const button = e.target.closest('.remove-line-item');
                 const lineId = button.dataset.lineId;
+                console.log('🔑 Line ID to remove:', lineId);
                 this.removeLineItem(lineId);
+            } else {
+                console.log('🔍 Click was not on a delete button');
             }
         });
+        
+        console.log('✅ Event listeners attached successfully');
     }
 
     /**
@@ -301,10 +395,16 @@ class OrderDetailsTable {
      * @param {string} lineId 
      */
     removeLineItem(lineId) {
-        if (window.calculator?.removeLineItem) {
-            window.calculator.removeLineItem(lineId);
-        } else if (window.ProductManager?.removeLine) {
+        console.log('🗑️ OrderDetailsTable.removeLineItem called with ID:', lineId);
+        
+        if (window.ProductManager?.removeLine) {
+            console.log('🗑️ Calling ProductManager.removeLine');
             window.ProductManager.removeLine(lineId);
+        } else if (window.calculator?.removeLineItem) {
+            console.log('🗑️ Calling window.calculator.removeLineItem');
+            window.calculator.removeLineItem(lineId);
+        } else {
+            console.error('🗑️ No remove method available');
         }
     }
 
@@ -337,3 +437,24 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
     window.OrderDetailsTable = OrderDetailsTable;
 }
+
+// Global test function for debugging
+window.testOrderDetailsTable = function() {
+    console.log('🧪 Testing OrderDetailsTable update...');
+    console.log('🧪 OrderDetailsTable available:', typeof window.OrderDetailsTable);
+    
+    if (window.calculator && window.calculator.lineItems) {
+        const lineItems = window.calculator.lineItems;
+        console.log('🧪 Found', lineItems.length, 'line items:', lineItems);
+        
+        const uiManager = window.calculator.uiManager;
+        if (uiManager && uiManager.renderProductLines) {
+            console.log('🧪 Calling renderProductLines...');
+            uiManager.renderProductLines(lineItems);
+        } else {
+            console.log('🧪 UIManager or renderProductLines not found');
+        }
+    } else {
+        console.log('🧪 Calculator or lineItems not found');
+    }
+};

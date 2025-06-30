@@ -162,10 +162,18 @@ class UIManager {
             
             const container = document.querySelector('#calculationDisplay');
             if (container) {
+                console.log('🔍 OrderCalculation debug:', {
+                    currentOrderCalculation: !!this.currentOrderCalculation,
+                    hasElement: this.currentOrderCalculation?.element ? true : false,
+                    containerFound: !!container
+                });
+                
                 // Create or update order calculation component
-                if (this.currentOrderCalculation) {
+                if (this.currentOrderCalculation && this.currentOrderCalculation.element) {
+                    console.log('🔄 Updating existing OrderCalculation');
                     this.currentOrderCalculation.update(calculationData);
                 } else {
+                    console.log('🆕 Creating new OrderCalculation');
                     this.currentOrderCalculation = new window.OrderCalculation({
                         showTierInfo: true,
                         showBreakdown: true,
@@ -173,7 +181,12 @@ class UIManager {
                     });
                     
                     const calcElement = this.currentOrderCalculation.create(calculationData);
-                    container.replaceWith(calcElement);
+                    console.log('🔍 Created OrderCalculation element:', !!calcElement);
+                    console.log('🔍 OrderCalculation.element set:', !!this.currentOrderCalculation.element);
+                    
+                    // Replace container content instead of replacing the container itself
+                    container.innerHTML = '';
+                    container.appendChild(calcElement);
                 }
             }
         } else {
@@ -1132,17 +1145,47 @@ class UIManager {
         console.log('🔍 OrderDetailsTable available:', !!window.OrderDetailsTable);
         console.log('🔍 currentOrderDetailsTable initialized:', !!this.currentOrderDetailsTable);
         
+        // Initialize OrderDetailsTable if not already initialized but available
+        if (window.OrderDetailsTable && !this.currentOrderDetailsTable) {
+            console.log('🔧 Initializing OrderDetailsTable on-demand');
+            try {
+                this.currentOrderDetailsTable = new window.OrderDetailsTable();
+                console.log('✅ OrderDetailsTable initialized successfully on-demand');
+            } catch (error) {
+                console.error('❌ Failed to initialize OrderDetailsTable on-demand:', error);
+                this.currentOrderDetailsTable = null;
+            }
+        }
+        
         // Update OrderDetailsTable component if available
         if (window.OrderDetailsTable && this.currentOrderDetailsTable) {
             console.log('📋 Using modular OrderDetailsTable component');
-            const updatedTable = this.currentOrderDetailsTable.create(lineItems);
-            const container = document.querySelector('#orderDetailsTable');
-            if (container && updatedTable) {
-                container.innerHTML = '';
-                container.appendChild(updatedTable);
-                console.log('✅ OrderDetailsTable updated successfully');
-            } else {
-                console.warn('⚠️ OrderDetailsTable container or updatedTable not found');
+            console.log('📋 Line items to render:', lineItems.length, lineItems);
+            try {
+                const updatedTable = this.currentOrderDetailsTable.create(lineItems);
+                const container = document.querySelector('#orderDetailsTable');
+                console.log('🔍 OrderDetailsTable container found:', !!container);
+                console.log('🔍 UpdatedTable created:', !!updatedTable);
+                
+                if (container && updatedTable) {
+                    container.innerHTML = '';
+                    container.appendChild(updatedTable);
+                    console.log('✅ OrderDetailsTable updated successfully');
+                } else {
+                    console.warn('⚠️ OrderDetailsTable container or updatedTable not found');
+                    if (!container) {
+                        console.warn('🚨 Container #orderDetailsTable not found in DOM');
+                    }
+                    if (!updatedTable) {
+                        console.warn('🚨 OrderDetailsTable.create() returned null/undefined');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error updating OrderDetailsTable:', error);
+                console.error('❌ Error stack:', error.stack);
+                // Fallback to legacy rendering
+                console.log('📋 Falling back to legacy product lines rendering due to error');
+                this.renderProductLinesLegacy(lineItems);
             }
         } else {
             console.log('📋 Falling back to legacy product lines rendering');

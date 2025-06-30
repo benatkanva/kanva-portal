@@ -119,10 +119,10 @@ class ProductManager {
         existingLines.forEach(line => line.remove());
         
         // Also check for any 'Unknown Product' elements that might be hardcoded
-        const unknownProducts = document.querySelectorAll('.product-order-body [class*="product-"]');
-        unknownProducts.forEach(element => {
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(element => {
             if (element.textContent && element.textContent.includes('Unknown Product')) {
-                element.remove();
+                element.style.display = 'none';
             }
         });
     }
@@ -265,31 +265,28 @@ class ProductManager {
         console.debug('[ProductManager] Image URL for', productKey, ':', imageUrl);
         
         tile.innerHTML = `
-            <div class="card-body text-center p-2">
-                <div class="product-image-container mb-2">
+            <div class="card-body text-center p-1">
+                <div class="product-image-container mb-1">
                     <img src="${imageUrl}" alt="${product.name}" 
                          class="product-image" 
-                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 6px;"
+                         style="width: 32px; height: 32px; object-fit: contain; border-radius: 4px;"
                          onerror="this.src='assets/images/placeholder.jpg';">
                 </div>
-                <h6 class="card-title mb-1" style="font-size: 0.85rem; font-weight: 600; color: #2c3e50; line-height: 1.2;">${product.name}</h6>
+                <h6 class="card-title mb-1" style="font-size: 0.7rem; font-weight: 600; color: #2c3e50; line-height: 1.1;">${product.name}</h6>
                 <div class="pricing-info mb-1">
-                    <span class="unit-price" style="font-size: 0.9rem; font-weight: 700; color: #27ae60;">$${product.price?.toFixed(2) || '0.00'}</span>
-                    <span class="price-label" style="font-size: 0.7rem; color: #7f8c8d; display: block;">per case</span>
+                    <span class="unit-price" style="font-size: 0.75rem; font-weight: 700; color: #27ae60;">$${product.price?.toFixed(2) || '0.00'}</span>
+                    <span class="price-label" style="font-size: 0.6rem; color: #7f8c8d; display: block;">per case</span>
                 </div>
                 <div class="product-badges">
-                    ${product.isBestSeller ? '<span class="badge bg-warning text-dark" style="font-size: 0.6rem;">BEST</span>' : ''}
-                    <span class="badge bg-primary" style="font-size: 0.6rem;">${product.category?.toUpperCase() || 'PRODUCT'}</span>
-                </div>
-                <div class="quick-add-indicator mt-1" style="font-size: 0.7rem; color: #6c757d;">
-                    <i class="fas fa-plus-circle"></i> Click to add
+                    ${product.isBestSeller ? '<span class="badge bg-warning text-dark" style="font-size: 0.55rem; padding: 2px 4px;">BEST</span>' : ''}
+                    <span class="badge bg-primary" style="font-size: 0.55rem; padding: 2px 4px;">${product.category?.toUpperCase() || 'PRODUCT'}</span>
                 </div>
             </div>
         `;
         
-        // Add click handler
+        // Add click event listener to tile
         tile.addEventListener('click', () => {
-            ProductManager.addProductToQuote(productKey);
+            this.addProductToQuote(productKey, product);
         });
         
         return tile;
@@ -314,7 +311,7 @@ class ProductManager {
         }
         
         // Hide empty state if it's visible
-        const emptyState = document.getElementById('productEmptyState');
+        const emptyState = document.getElementById('emptyState');
         if (emptyState) emptyState.style.display = 'none';
         
         // Show the product lines container
@@ -364,11 +361,16 @@ class ProductManager {
         }
         
         // Update the Order Details table
-        if (window.UIManager && window.UIManager.getInstance) {
-            const uiManager = window.UIManager.getInstance();
-            if (uiManager && uiManager.updateOrderDetailsTable) {
-                uiManager.updateOrderDetailsTable();
-            }
+        const uiManager = window.calculator?.uiManager;
+        if (uiManager && uiManager.renderProductLines) {
+            console.log('📋 Calling renderProductLines from ProductManager');
+            uiManager.renderProductLines(window.calculator.lineItems);
+        } else {
+            console.warn('⚠️ UIManager or renderProductLines not found:', {
+                uiManager: !!uiManager,
+                renderProductLines: !!(uiManager?.renderProductLines),
+                calculator: !!window.calculator
+            });
         }
         
         // Show notification
@@ -418,7 +420,7 @@ class ProductManager {
                 <div class="product-line-details">
                     <!-- Product Name/Title -->
                     <div class="product-line-title">
-                        <div class="fw-semibold text-truncate">${product.name || 'Unknown Product'}</div>
+                        <div class="fw-semibold text-truncate">${product.name}</div>
                         <div class="small text-muted">$${lineItem.unitPrice ? lineItem.unitPrice.toFixed(2) : '0.00'}/unit</div>
                     </div>
                     
@@ -490,7 +492,7 @@ class ProductManager {
             });
         });
         
-        console.log(`🔄 Rendered product line: ${product.name || 'Unknown Product'}`);
+        console.log(`🔄 Rendered product line: ${product.name}`);
     }
     
     /**
@@ -516,28 +518,42 @@ class ProductManager {
         // Remove from calculator's line items
         window.calculator.lineItems.splice(lineItemIndex, 1);
         
-        // Remove from DOM immediately
+        // Remove from Product Lines DOM (fix class name)
         const lineElement = document.querySelector(`.product-line-item[data-line-id="${lineId}"]`);
         if (lineElement && lineElement.parentNode) {
             lineElement.parentNode.removeChild(lineElement);
+            console.log('✅ Removed product line element from DOM:', lineId);
+        } else {
+            console.warn('⚠️ Product line element not found in DOM:', lineId);
         }
         
         // Update calculator totals
         if (window.calculator.calculateAll) {
             window.calculator.calculateAll();
         }
-        
-        // Update the Order Details table
-        if (window.UIManager && window.UIManager.getInstance) {
-            const uiManager = window.UIManager.getInstance();
-            if (uiManager && uiManager.updateOrderDetailsTable) {
-                uiManager.updateOrderDetailsTable();
+
+        // Update the Order Details table using correct UIManager reference
+        if (window.calculator && window.calculator.uiManager) {
+            if (window.calculator.uiManager.renderProductLines) {
+                console.log('🔄 About to update Order Details table, remaining items:', window.calculator.lineItems.length);
+                window.calculator.uiManager.renderProductLines(window.calculator.lineItems);
+                console.log('✅ Updated Order Details table after deletion');
+            } else {
+                console.warn('⚠️ renderProductLines method not found on uiManager');
+            }
+        } else {
+            console.warn('⚠️ UIManager not found via window.calculator.uiManager');
+            // Fallback: try to update manually
+            const orderDetailsContainer = document.getElementById('orderDetailsTableContainer');
+            if (orderDetailsContainer && window.calculator.lineItems.length === 0) {
+                orderDetailsContainer.innerHTML = '<div class="alert alert-info">No items in order yet. Click on products above to add them.</div>';
+                console.log('🔄 Applied fallback empty state to Order Details table');
             }
         }
         
         // If no items left, show empty state
         if (window.calculator.lineItems.length === 0) {
-            const emptyState = document.getElementById('productEmptyState');
+            const emptyState = document.getElementById('emptyState');
             if (emptyState) emptyState.style.display = 'block';
             
             const productLinesContainer = document.getElementById('productLinesContainer');
@@ -661,8 +677,8 @@ class ProductManager {
             // Update the Order Details table
             if (window.UIManager && window.UIManager.getInstance) {
                 const uiManager = window.UIManager.getInstance();
-                if (uiManager && uiManager.updateOrderDetailsTable) {
-                    uiManager.updateOrderDetailsTable();
+                if (uiManager && uiManager.renderProductLines) {
+                    uiManager.renderProductLines(window.calculator.lineItems);
                 }
             }
         }
@@ -759,12 +775,12 @@ class ProductManager {
         // Quantity changes
         const masterCasesInput = lineElement.querySelector('[data-field="masterCases"]');
         masterCasesInput?.addEventListener('change', (e) => {
-            this.updateLineItem(lineId, 'masterCases', parseInt(e.target.value) || 0);
+            this.handleQuantityChange(lineId, 'masterCases', parseInt(e.target.value) || 0);
         });
         
         const displayBoxesInput = lineElement.querySelector('[data-field="displayBoxes"]');
         displayBoxesInput?.addEventListener('change', (e) => {
-            this.updateLineItem(lineId, 'displayBoxes', parseInt(e.target.value) || 0);
+            this.handleQuantityChange(lineId, 'displayBoxes', parseInt(e.target.value) || 0);
         });
         
         // Remove line
@@ -775,44 +791,25 @@ class ProductManager {
     }
     
     /**
-     * Update line item data
+     * Handle quantity changes and automatically create/update line items
      */
-    static updateLineItem(lineId, field, value) {
-        if (!window.calculator?.lineItems) return;
-        
-        const lineItem = window.calculator.lineItems.find(item => item.id === lineId);
-        if (!lineItem) return;
-        
-        lineItem[field] = value;
-        
-        // Recalculate if needed
-        if (window.calculator.calculateAll) {
-            window.calculator.calculateAll();
+    static handleQuantityChange(productKey, field, value) {
+        if (!window.calculator) {
+            console.error('Calculator not available for quantity change');
+            return;
         }
+        
+        // If value is 0 or empty, don't create/update line item
+        if (!value || value <= 0) {
+            console.log(`Quantity is 0 for ${productKey} ${field}, skipping line item creation`);
+            return;
+        }
+        
+        // Check if line item already exists for this product
+        console.log(`Updated ${field} to ${value} for product ${productKey}`);
     }
     
-    /**
-     * Remove product line
-     */
-    static removeLine(lineId) {
-        if (!window.calculator?.lineItems) return;
-        
-        const index = window.calculator.lineItems.findIndex(item => item.id === lineId);
-        if (index > -1) {
-            window.calculator.lineItems.splice(index, 1);
-        }
-        
-        // Remove from DOM
-        const lineElement = document.querySelector(`[data-line-id="${lineId}"]`);
-        if (lineElement) {
-            lineElement.remove();
-        }
-        
-        // Recalculate
-        if (window.calculator.calculateAll) {
-            window.calculator.calculateAll();
-        }
-    }
+    // Duplicate removeLine method removed - using the complete one above
     
     /**
      * Render product lines container
