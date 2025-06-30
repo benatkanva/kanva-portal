@@ -1,0 +1,114 @@
+/* 
+ * Table Component Styles
+ * Styled according to Kanva Botanicals brand guidelines
+ */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 0.9rem;
+  background-color: #ffffff;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e1e4e8;
+  vertical-align: middle;
+}
+
+thead th {
+  background-color: #f6f8fa;
+  color: #17351A;
+  font-weight: 600;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+tbody tr:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.table-striped tbody tr:nth-child(odd) {
+  background-color: var(--color-bg-dark);
+}
+
+.table-striped tbody tr:nth-child(odd):hover {
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.table-bordered {
+  border: 1px solid var(--color-border);
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid var(--color-border);
+}
+
+/* Table responsive */
+@media (max-width: 768px) {
+  .table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+  }
+  
+  .table-responsive th, 
+  .table-responsive td {
+    white-space: nowrap;
+  }
+}
+
+/* Table actions */
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Table status indicators */
+.table-status {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.status-pending {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.status-inactive {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.status-draft {
+  background-color: var(--color-info-light);
+  color: var(--color-info);
+}

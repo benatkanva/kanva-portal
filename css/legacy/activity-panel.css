@@ -1,0 +1,99 @@
+/* Activity Panel Mode - Compact for CRM sidebar */
+.activity-panel-mode {
+    padding: 0;
+    margin: 0;
+    background-color: white;
+    min-height: 100vh;
+}
+
+.activity-panel-calculator {
+    background: white;
+    padding: 12px;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #93D500;
+}
+
+.activity-header h3 {
+    margin: 0;
+    color: #17351A;
+    font-size: 16px;
+}
+
+.launch-modal-btn {
+    background: linear-gradient(135deg, #93D500 0%, #7ab300 100%);
+    color: #17351A;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.launch-modal-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar specific styles */
+.sidebar-mode {
+    padding: 0;
+    margin: 0;
+    background-color: white;
+}
+
+.sidebar-mode .calculator-container {
+    border: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 10px;
+    max-width: 100%;
+}
+
+.sidebar-mode .input-group {
+    margin-bottom: 10px;
+}
+
+.sidebar-mode .input-group label {
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.sidebar-mode .input-group input,
+.sidebar-mode .input-group select {
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+.sidebar-mode .calculate-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+/* Responsive adjustments for sidebar */
+@media (max-width: 1200px) {
+    .sidebar-mode .calculator-container {
+        padding: 8px;
+    }
+    
+    .sidebar-mode .input-group label {
+        font-size: 11px;
+    }
+    
+    .sidebar-mode .input-group input,
+    .sidebar-mode .input-group select {
+        padding: 5px 6px;
+        font-size: 11px;
+    }
+}

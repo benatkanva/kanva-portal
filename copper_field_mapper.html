@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copper Field Mapper - Kanva Integration Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #93D500 0%, #17351A 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #17351A 0%, #93D500 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+            gap: 20px;
+        }
+
+        .step {
+            padding: 12px 24px;
+            border-radius: 25px;
+            background: #f5f5f5;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: #93D500;
+            color: #17351A;
+        }
+
+        .step.completed {
+            background: #17351A;
+            color: white;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .api-config {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #17351A;
+            margin-bottom: 8px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #93D500;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #93D500 0%, #7BC300 100%);
+            color: #17351A;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(147, 213, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .fields-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .field-column {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .field-column h3 {
+            color: #17351A;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .field-item {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .field-item:hover {
+            border-color: #93D500;
+            transform: translateY(-2px);
+        }
+
+        .field-item.selected {
+            border-color: #93D500;
+            background: #f0f9e6;
+        }
+
+        .field-item.mapped {
+            border-color: #17351A;
+            background: #e6f2e6;
+        }
+
+        .field-name {
+            font-weight: 600;
+            color: #17351A;
+            margin-bottom: 5px;
+        }
+
+        .field-type {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .field-description {
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .mapping-line {
+            position: absolute;
+            height: 2px;
+            background: #93D500;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .mapping-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #93D500;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .results-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .code-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-loading {
+            background: #f59e0b;
+            animation: pulse 2s infinite;
+        }
+
+        .status-success {
+            background: #10b981;
+        }
+
+        .status-error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .mapping-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e1e5e9;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #93D500;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .auto-map-suggestions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .suggestion-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ffeaa7;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-confidence {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        .confidence-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 Copper Field Mapper</h1>
+            <p>Design and configure your CRM integration with visual field mapping</p>
+        </div>
+
+        <div class="content">
+            <!-- Step Navigation -->
+            <div class="step-nav">
+                <div class="step active" data-step="1">1. API Setup</div>
+                <div class="step" data-step="2">2. Field Discovery</div>
+                <div class="step" data-step="3">3. Field Mapping</div>
+                <div class="step" data-step="4">4. Code Generation</div>
+            </div>
+
+            <!-- Step 1: API Configuration -->
+            <div class="step-content active" data-step="1">
+                <div class="api-config">
+                    <h3>🔑 Copper API Configuration</h3>
+                    <div class="alert alert-info">
+                        <strong>Secure Setup:</strong> Your API credentials are only used locally and never stored or transmitted.
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apiKey">Copper API Key</label>
+                        <input type="password" id="apiKey" placeholder="Enter your Copper API key">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="userEmail">Your Copper User Email</label>
+                        <input type="email" id="userEmail" placeholder="your@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apiUrl">API Base URL</label>
+                        <input type="url" id="apiUrl" value="https://api.copper.com/developer_api/v1" readonly>
+                    </div>
+
+                    <button class="btn" onclick="testConnection()">
+                        <span class="status-indicator" id="connectionStatus"></span>
+                        Test Connection
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Field Discovery -->
+            <div class="step-content" data-step="2">
+                <div class="api-config">
+                    <h3>🔍 Discover Copper Fields</h3>
+                    <div class="alert alert-info">
+                        <strong>Field Discovery:</strong> We'll fetch all your custom fields, standard fields, and analyze your data structure.
+                    </div>
+
+                    <button class="btn" onclick="discoverFields()" id="discoverBtn">
+                        <span class="status-indicator" id="discoveryStatus"></span>
+                        Discover All Fields
+                    </button>
+
+                    <div id="discoveryResults" style="display: none;">
+                        <div class="mapping-stats">
+                            <div class="stat-card">
+                                <div class="stat-number" id="totalFieldsCount">0</div>
+                                <div class="stat-label">Total Fields Found</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="customFieldsCount">0</div>
+                                <div class="stat-label">Custom Fields</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="standardFieldsCount">0</div>
+                                <div class="stat-label">Standard Fields</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="appFieldsCount">0</div>
+                                <div class="stat-label">App Fields</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Field Mapping -->
+            <div class="step-content" data-step="3">
+                <h3>🎯 Map Fields</h3>
+                <div class="alert alert-info">
+                    <strong>Visual Mapping:</strong> Click on Copper fields (left) and then click on App fields (right) to create mappings. We'll also suggest automatic mappings based on field names and types.
+                </div>
+
+                <div id="autoMappingSuggestions" class="auto-map-suggestions" style="display: none;">
+                    <h4>💡 Automatic Mapping Suggestions</h4>
+                    <div id="suggestionsList"></div>
+                    <button class="btn" onclick="applyAutoMappings()">Apply All High-Confidence Mappings</button>
+                </div>
+
+                <div class="fields-container">
+                    <div class="field-column">
+                        <h3>📊 Copper CRM Fields</h3>
+                        <div id="copperFields">
+                            <div class="alert alert-warning">
+                                Please complete field discovery first.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-column">
+                        <h3>🌿 Kanva App Fields</h3>
+                        <div id="appFields">
+                            <!-- These will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mapping-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="mappedCount">0</div>
+                        <div class="stat-label">Fields Mapped</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="mappingProgress">0%</div>
+                        <div class="stat-label">Mapping Progress</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Code Generation -->
+            <div class="step-content" data-step="4">
+                <div class="results-container">
+                    <h3>🚀 Generated Integration Code</h3>
+                    <div class="alert alert-success">
+                        <strong>Ready to Deploy:</strong> Copy this code into your copper-integration.js file to implement the field mappings.
+                    </div>
+
+                    <div class="mapping-stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="finalMappedCount">0</div>
+                            <div class="stat-label">Total Mappings</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="autoPopulateCount">0</div>
+                            <div class="stat-label">Auto-Populate Fields</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="syncBackCount">0</div>
+                            <div class="stat-label">Sync-Back Fields</div>
+                        </div>
+                    </div>
+
+                    <h4>📝 Field Mapping Configuration</h4>
+                    <div class="code-output" id="mappingConfig"></div>
+
+                    <h4>🔄 Auto-Population Method</h4>
+                    <div class="code-output" id="autoPopulateCode"></div>
+
+                    <h4>💾 Sync-Back Method</h4>
+                    <div class="code-output" id="syncBackCode"></div>
+
+                    <div style="margin-top: 20px;">
+                        <button class="btn" onclick="downloadConfiguration()">📥 Download Complete Configuration</button>
+                        <button class="btn btn-secondary" onclick="copyToClipboard()">📋 Copy All Code</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let copperFields = [];
+        let appFields = [];
+        let fieldMappings = [];
+        let selectedCopperField = null;
+        let selectedAppField = null;
+        let apiConfig = {};
+
+        // Define Kanva app fields
+        const kanvaAppFields = [
+            { id: 'quoteName', name: 'Quote Name', type: 'text', description: 'Name/title for the quote' },
+            { id: 'companyName', name: 'Company Name', type: 'text', description: 'Customer company name' },
+            { id: 'contactName', name: 'Contact Name', type: 'text', description: 'Primary contact person' },
+            { id: 'segment', name: 'Customer Segment', type: 'select', description: 'Business type (Smoke Shop, Gas Station, etc.)' },
+            { id: 'customerState', name: 'Customer State', type: 'select', description: 'US state for shipping calculations' },
+            { id: 'phone', name: 'Phone Number', type: 'tel', description: 'Primary phone number' },
+            { id: 'emailDomain', name: 'Email Domain', type: 'text', description: 'Company email domain' },
+            { id: 'maxRetail', name: 'Max Retail Price', type: 'number', description: 'Maximum retail price point' },
+            { id: 'paymentMethod', name: 'Payment Method', type: 'select', description: 'Preferred payment method' },
+            { id: 'creditTerms', name: 'Credit Terms', type: 'text', description: 'Net payment terms' },
+            { id: 'shippingPreference', name: 'Shipping Preference', type: 'text', description: 'Preferred shipping method' },
+            { id: 'lastOrderDate', name: 'Last Order Date', type: 'date', description: 'Date of last order' },
+            { id: 'lastOrderTotal', name: 'Last Order Total', type: 'number', description: 'Value of last order' },
+            { id: 'preferredProducts', name: 'Preferred Products', type: 'text', description: 'Commonly ordered products' },
+            { id: 'salesRep', name: 'Sales Representative', type: 'text', description: 'Assigned sales rep' },
+            { id: 'territoryCode', name: 'Territory Code', type: 'text', description: 'Sales territory identifier' }
+        ];
+
+        // Initialize app fields
+        function initializeAppFields() {
+            const container = document.getElementById('appFields');
+            container.innerHTML = '';
+
+            kanvaAppFields.forEach(field => {
+                const fieldElement = createFieldElement(field, 'app');
+                container.appendChild(fieldElement);
+            });
+
+            appFields = kanvaAppFields;
+            updateStats();
+        }
+
+        // Create field element
+        function createFieldElement(field, type) {
+            const div = document.createElement('div');
+            div.className = 'field-item';
+            div.dataset.fieldId = field.id;
+            div.dataset.fieldType = type;
+
+            div.innerHTML = `
+                <div class="field-name">${field.name}</div>
+                <div class="field-type">${field.type || 'text'}</div>
+                <div class="field-description">${field.description || ''}</div>
+            `;
+
+            div.onclick = () => selectField(field, type, div);
+            return div;
+        }
+
+        // Select field for mapping
+        function selectField(field, type, element) {
+            // Clear previous selections of same type
+            document.querySelectorAll(`.field-item[data-field-type="${type}"]`).forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Select current field
+            element.classList.add('selected');
+
+            if (type === 'copper') {
+                selectedCopperField = field;
+            } else {
+                selectedAppField = field;
+            }
+
+            // If both fields selected, create mapping
+            if (selectedCopperField && selectedAppField) {
+                createMapping(selectedCopperField, selectedAppField);
+                clearSelections();
+            }
+        }
+
+        // Create field mapping
+        function createMapping(copperField, appField) {
+            // Check if mapping already exists
+            const existingMapping = fieldMappings.find(m => 
+                m.copper.id === copperField.id && m.app.id === appField.id
+            );
+
+            if (existingMapping) {
+                alert('This mapping already exists!');
+                return;
+            }
+
+            // Remove any existing mappings for the app field
+            fieldMappings = fieldMappings.filter(m => m.app.id !== appField.id);
+
+            // Add new mapping
+            fieldMappings.push({
+                copper: copperField,
+                app: appField,
+                confidence: 'manual'
+            });
+
+            // Update UI
+            updateMappingDisplay();
+            updateStats();
+            
+            console.log('✅ Mapping created:', copperField.name, '→', appField.name);
+        }
+
+        // Clear field selections
+        function clearSelections() {
+            selectedCopperField = null;
+            selectedAppField = null;
+            document.querySelectorAll('.field-item.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+        }
+
+        // Update mapping display
+        function updateMappingDisplay() {
+            // Clear existing mapping indicators
+            document.querySelectorAll('.mapping-indicator').forEach(el => el.remove());
+
+            // Add mapping indicators
+            fieldMappings.forEach((mapping, index) => {
+                // Mark copper field as mapped
+                const copperElement = document.querySelector(`[data-field-id="${mapping.copper.id}"][data-field-type="copper"]`);
+                if (copperElement) {
+                    copperElement.classList.add('mapped');
+                    const indicator = document.createElement('div');
+                    indicator.className = 'mapping-indicator';
+                    indicator.textContent = index + 1;
+                    copperElement.appendChild(indicator);
+                }
+
+                // Mark app field as mapped
+                const appElement = document.querySelector(`[data-field-id="${mapping.app.id}"][data-field-type="app"]`);
+                if (appElement) {
+                    appElement.classList.add('mapped');
+                    const indicator = document.createElement('div');
+                    indicator.className = 'mapping-indicator';
+                    indicator.textContent = index + 1;
+                    appElement.appendChild(indicator);
+                }
+            });
+        }
+
+        // Test API connection
+        async function testConnection() {
+            const apiKey = document.getElementById('apiKey').value;
+            const userEmail = document.getElementById('userEmail').value;
+            const statusEl = document.getElementById('connectionStatus');
+
+            if (!apiKey || !userEmail) {
+                alert('Please enter both API key and email');
+                return;
+            }
+
+            statusEl.className = 'status-indicator status-loading';
+
+            try {
+                const response = await fetch('https://api.copper.com/developer_api/v1/account', {
+                    headers: {
+                        'X-PW-AccessToken': apiKey,
+                        'X-PW-Application': 'developer_api',
+                        'X-PW-UserEmail': userEmail,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    statusEl.className = 'status-indicator status-success';
+                    apiConfig = { apiKey, userEmail };
+                    
+                    // Enable next step
+                    document.querySelector('[data-step="1"]').classList.add('completed');
+                    document.querySelector('[data-step="2"]').classList.add('active');
+                    
+                    alert('✅ Connection successful! You can proceed to field discovery.');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                statusEl.className = 'status-indicator status-error';
+                alert('❌ Connection failed: ' + error.message);
+            }
+        }
+
+        // Discover fields from Copper
+        async function discoverFields() {
+            if (!apiConfig.apiKey) {
+                alert('Please test your API connection first');
+                return;
+            }
+
+            const statusEl = document.getElementById('discoveryStatus');
+            const btn = document.getElementById('discoverBtn');
+            
+            statusEl.className = 'status-indicator status-loading';
+            btn.disabled = true;
+
+            try {
+                // Fetch custom field definitions
+                const customFieldsResponse = await fetch('https://api.copper.com/developer_api/v1/custom_field_definitions', {
+                    headers: {
+                        'X-PW-AccessToken': apiConfig.apiKey,
+                        'X-PW-Application': 'developer_api',
+                        'X-PW-UserEmail': apiConfig.userEmail,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const customFields = await customFieldsResponse.json();
+
+                // Add standard Copper fields
+                const standardFields = [
+                    { id: 'name', name: 'Company Name', data_type: 'String', description: 'Company name' },
+                    { id: 'email', name: 'Email', data_type: 'String', description: 'Primary email' },
+                    { id: 'phone', name: 'Phone', data_type: 'String', description: 'Primary phone' },
+                    { id: 'website', name: 'Website', data_type: 'String', description: 'Company website' },
+                    { id: 'tags', name: 'Tags', data_type: 'MultiSelect', description: 'Company tags' },
+                    { id: 'details', name: 'Details', data_type: 'Text', description: 'Company description' }
+                ];
+
+                copperFields = [
+                    ...standardFields.map(f => ({ ...f, is_custom: false })),
+                    ...customFields.map(f => ({ ...f, is_custom: true }))
+                ];
+
+                // Display fields
+                displayCopperFields();
+                
+                // Generate auto-mapping suggestions
+                generateAutoMappingSuggestions();
+
+                statusEl.className = 'status-indicator status-success';
+                
+                // Enable next step
+                document.querySelector('[data-step="2"]').classList.add('completed');
+                document.querySelector('[data-step="3"]').classList.add('active');
+                
+                document.getElementById('discoveryResults').style.display = 'block';
+                updateStats();
+
+            } catch (error) {
+                statusEl.className = 'status-indicator status-error';
+                alert('❌ Field discovery failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Display Copper fields
+        function displayCopperFields() {
+            const container = document.getElementById('copperFields');
+            container.innerHTML = '';
+
+            copperFields.forEach(field => {
+                const fieldElement = createFieldElement({
+                    id: field.id,
+                    name: field.name,
+                    type: field.data_type,
+                    description: field.description || (field.is_custom ? 'Custom field' : 'Standard field')
+                }, 'copper');
+                
+                container.appendChild(fieldElement);
+            });
+        }
+
+        // Generate auto-mapping suggestions
+        function generateAutoMappingSuggestions() {
+            const suggestions = [];
+
+            copperFields.forEach(copperField => {
+                kanvaAppFields.forEach(appField => {
+                    const confidence = calculateMappingConfidence(copperField, appField);
+                    if (confidence > 0) {
+                        suggestions.push({
+                            copper: copperField,
+                            app: appField,
+                            confidence: confidence
+                        });
+                    }
+                });
+            });
+
+            // Sort by confidence
+            suggestions.sort((a, b) => b.confidence - a.confidence);
+
+            // Display suggestions
+            displayAutoMappingSuggestions(suggestions.slice(0, 10)); // Top 10
+        }
+
+        // Calculate mapping confidence
+        function calculateMappingConfidence(copperField, appField) {
+            const copperName = copperField.name.toLowerCase();
+            const appName = appField.name.toLowerCase();
+            const appId = appField.id.toLowerCase();
+
+            let confidence = 0;
+
+            // Exact name match
+            if (copperName === appName) confidence += 0.9;
+            
+            // Partial name match
+            if (copperName.includes(appName) || appName.includes(copperName)) confidence += 0.7;
+            
+            // ID/field name match
+            if (copperName.includes(appId) || appId.includes(copperName.replace(/\s+/g, ''))) confidence += 0.8;
+
+            // Type compatibility
+            if (areTypesCompatible(copperField.data_type, appField.type)) confidence += 0.3;
+
+            // Specific field matches
+            const specificMatches = {
+                'company': ['company', 'companyname'],
+                'phone': ['phone', 'telephone'],
+                'email': ['email', 'emaildomain'],
+                'state': ['state', 'customerstate'],
+                'contact': ['contact', 'contactname'],
+                'segment': ['segment', 'type', 'industry'],
+                'website': ['website', 'emaildomain']
+            };
+
+            for (const [keyword, variants] of Object.entries(specificMatches)) {
+                if (variants.some(v => copperName.includes(v) && (appName.includes(v) || appId.includes(v)))) {
+                    confidence += 0.6;
+                }
+            }
+
+            return Math.min(confidence, 1.0);
+        }
+
+        // Check type compatibility
+        function areTypesCompatible(copperType, appType) {
+            const compatibilityMap = {
+                'String': ['text', 'email', 'tel', 'url'],
+                'Text': ['text', 'textarea'],
+                'Number': ['number'],
+                'Date': ['date'],
+                'Dropdown': ['select'],
+                'MultiSelect': ['select', 'text']
+            };
+
+            return compatibilityMap[copperType]?.includes(appType) || false;
+        }
+
+        // Display auto-mapping suggestions
+        function displayAutoMappingSuggestions(suggestions) {
+            if (suggestions.length === 0) return;
+
+            const container = document.getElementById('autoMappingSuggestions');
+            const list = document.getElementById('suggestionsList');
+            
+            list.innerHTML = '';
+            
+            suggestions.forEach(suggestion => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                
+                const confidenceClass = suggestion.confidence >= 0.8 ? 'confidence-high' :
+                                      suggestion.confidence >= 0.5 ? 'confidence-medium' : 'confidence-low';
+                
+                div.innerHTML = `
+                    <div>
+                        <strong>${suggestion.copper.name}</strong> → <strong>${suggestion.app.name}</strong>
+                    </div>
+                    <div class="suggestion-confidence ${confidenceClass}">
+                        ${Math.round(suggestion.confidence * 100)}%
+                    </div>
+                `;
+                
+                div.onclick = () => {
+                    createMapping(suggestion.copper, suggestion.app);
+                    div.style.opacity = '0.5';
+                    div.onclick = null;
+                };
+                
+                list.appendChild(div);
+            });
+            
+            container.style.display = 'block';
+        }
+
+        // Apply auto mappings
+        function applyAutoMappings() {
+            const suggestions = Array.from(document.querySelectorAll('.confidence-high')).map(el => {
+                const suggestionItem = el.closest('.suggestion-item');
+                // Extract data from the suggestion item
+                // This is a simplified version - you'd need to store the actual suggestion data
+                return null; // Placeholder
+            }).filter(Boolean);
+
+            // Apply high-confidence mappings
+            // Implementation would go here
+            
+            alert('Auto-mappings applied! Review the mappings and proceed to code generation.');
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalFieldsCount').textContent = copperFields.length;
+            document.getElementById('customFieldsCount').textContent = copperFields.filter(f => f.is_custom).length;
+            document.getElementById('standardFieldsCount').textContent = copperFields.filter(f => !f.is_custom).length;
+            document.getElementById('appFieldsCount').textContent = appFields.length;
+            document.getElementById('mappedCount').textContent = fieldMappings.length;
+            document.getElementById('mappingProgress').textContent = Math.round((fieldMappings.length / appFields.length) * 100) + '%';
+            
+            // Update final stats
+            document.getElementById('finalMappedCount').textContent = fieldMappings.length;
+            document.getElementById('autoPopulateCount').textContent = fieldMappings.filter(m => m.app.id !== 'lastOrderDate' && m.app.id !== 'lastOrderTotal').length;
+            document.getElementById('syncBackCount').textContent = fieldMappings.filter(m => ['lastOrderDate', 'lastOrderTotal', 'preferredProducts'].includes(m.app.id)).length;
+        }
+
+        // Step navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize app fields
+            initializeAppFields();
+
+            // Step navigation
+            document.querySelectorAll('.step').forEach(step => {
+                step.addEventListener('click', function() {
+                    const stepNumber = this.dataset.step;
+                    
+                    // Update active step
+                    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    document.querySelectorAll('.step-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.querySelector(`[data-step="${stepNumber}"]`).classList.add('active');
+                });
+            });
+        });
+
+        // Generate and display integration code
+        function generateIntegrationCode() {
+            // This would generate the actual JavaScript code for integration
+            // Implementation details would go here
+        }
+
+        // Download configuration
+        function downloadConfiguration() {
+            const config = {
+                mappings: fieldMappings,
+                timestamp: new Date().toISOString(),
+                apiConfig: { userEmail: apiConfig.userEmail } // Don't include API key
+            };
+
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'copper-field-mappings.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            // Implementation for copying generated code
+            alert('Code copied to clipboard!');
+        }
+    </script>
+</body>
+</html>

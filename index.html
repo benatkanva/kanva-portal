@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanva Botanicals Quote Calculator</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/assets/logo/favicon.ico">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Main CSS with modular imports -->
+    <link rel="stylesheet" href="/css/main.css">
+    
+    <!-- Copper CRM SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/copper-sdk@latest/dist/copper-sdk.min.js"></script>
+    
+    <!-- Modernizr for feature detection -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+</head>
+<body>
+    <!-- Loading State -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading Kanva Quote Calculator...</p>
+        </div>
+    </div>
+
+    <!-- Main Calculator Container -->
+    <div id="app" class="calculator-container fade-in" style="display: none;">
+        
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="brand-section">
+                    <img src="/assets/logo/kanva-logo.png" alt="Kanva Botanicals" class="brand-logo">
+                </div>
+                <div class="header-actions">
+                    <button id="adminToggle" class="btn btn-secondary btn-sm" style="display: none;">
+                        Admin Panel
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Customer Information Section -->
+        <div class="card customer-info-card">
+            <div class="card-header">
+                <h3>👤 Customer Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="quoteName" class="form-label">Quote Name</label>
+                        <input type="text" id="quoteName" class="form-control" placeholder="Product Quote for Company Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="companyName" class="form-label">Company Name</label>
+                        <input type="text" id="companyName" class="form-control" placeholder="ABC Distribution">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerSegment" class="form-label">Customer Segment</label>
+                        <select id="customerSegment" class="form-control">
+                            <option value="">Select segment...</option>
+                            <option value="distributor">Distributor</option>
+                            <option value="retailer">Retailer</option>
+                            <option value="direct">Direct Consumer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerState" class="form-label">State</label>
+                        <select id="customerState" class="form-control">
+                            <option value="">Select state...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerEmail" class="form-label">Email</label>
+                        <input type="email" id="customerEmail" class="form-control" placeholder="contact@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone" class="form-label">Phone Number</label>
+                        <input type="tel" id="customerPhone" class="form-control" placeholder="(555) 123-4567">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Catalog Section -->
+        <div class="card product-catalog-card">
+            <div class="card-header">
+                <h3>🛍️ Select Products</h3>
+            </div>
+            <div class="card-body">
+                <div id="productCatalog" class="product-grid">
+                    <!-- Product tiles will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Product & Order Details Section -->
+        <div class="card order-details-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>💶 Product & Order Details</h3>
+                <button id="addProductBtn" class="btn btn-primary btn-action">Add Product</button>
+            </div>
+            <div class="card-body">
+                <div id="productLinesContainer" class="product-lines">
+                    <!-- Product lines will be populated here -->
+                </div>
+                <div id="emptyState" class="empty-state">
+                    <p>No products added yet. Select products from the catalog above to get started.</p>
+                </div>
+                <div id="upsellAlert" class="alert alert-warning" style="display: none;">
+                    <div class="alert-content">
+                        <span id="upsellMessage"></span>
+                        <div class="alert-actions">
+                            <button id="acceptUpsellBtn" class="btn btn-sm btn-success btn-action" onclick="calculator.acceptUpsell()">Accept</button>
+                            <button id="dismissUpsellBtn" class="btn btn-sm btn-secondary btn-action" onclick="calculator.hideUpsellAlert()">Dismiss</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Details by Line Item Section -->
+        <div id="orderDetailsTable">
+            <!-- Order details table will be populated here -->
+        </div>
+
+        <!-- Bottom Row: Shipping Zone and Order Calculation -->
+        <div class="bottom-row card-grid">
+            <!-- Shipping Zone Card -->
+            <div class="card shipping-zone-card">
+                <div class="card-header">
+                    <h3>🚚 Shipping Zone</h3>
+                </div>
+                <div class="card-body">
+                    <div id="shippingZoneInfo" class="shipping-zone-info">
+                        <p class="text-muted">Select a state to see shipping information</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="manualShipping" class="form-label">Manual Shipping Override</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="manualShipping" class="form-control" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Calculation Card -->
+            <div class="card order-calculation-card">
+                <div class="card-header">
+                    <h3>💰 Order Calculation</h3>
+                </div>
+                <div class="card-body">
+                    <div class="calculation-display">
+                        <div class="calc-row">
+                            <span>Subtotal:</span>
+                            <span id="subtotalAmount">$0.00</span>
+                        </div>
+                        <div class="calc-row">
+                            <span>Shipping:</span>
+                            <span id="shippingAmount">$0.00</span>
+                        </div>
+                        <div class="calc-row">
+                            <span>Credit Card Fee (3%):</span>
+                            <span id="creditCardFee">$0.00</span>
+                        </div>
+                        <div class="calc-row total-row">
+                            <span><strong>Total:</strong></span>
+                            <span id="totalAmount"><strong>$0.00</strong></span>
+                        </div>
+                        <div id="tierInfo" class="tier-info" style="display: none;">
+                            <!-- Tier information will be dynamically inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods Card -->
+            <div class="card payment-methods-card">
+                <div class="card-header">
+                    <h3>💳 Payment Method</h3>
+                </div>
+                <div class="card-body">
+                    <div id="payment-methods-container" class="payment-options">
+                        <!-- Payment methods will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Quote Section -->
+        <div class="card full-width-section">
+            <div class="card-header">
+                <h3>📄 Generate Quote</h3>
+            </div>
+            <div class="card-body">
+                <div class="quote-generator">
+                    <div class="form-group">
+                        <label for="emailTemplate" class="form-label">Email Template</label>
+                        <select id="emailTemplate" class="form-control">
+                            <option value="initial">Initial Proposal</option>
+                            <option value="followup">Follow-up</option>
+                            <option value="negotiation">Negotiation</option>
+                            <option value="closing">Closing</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="emailPreview" class="form-label">Email Preview</label>
+                        <textarea id="emailPreview" class="form-control" rows="8" placeholder="Email content will appear here..."></textarea>
+                    </div>
+                    <div class="quote-actions">
+                        <button id="generateQuoteBtn" class="btn btn-primary btn-action">Generate Quote</button>
+                        <button id="copyQuoteBtn" class="btn btn-secondary btn-action">Copy to Clipboard</button>
+                        <button id="emailQuoteBtn" class="btn btn-success btn-action">Open in Email Client</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Settings - Bottom Panel -->
+        <div id="adminPanel" class="admin-panel-bottom" style="display: none;">
+            <div class="admin-toggle" onclick="calculator.toggleAdminPanel()">
+                <span class="admin-cog">⚙️</span>
+                <span class="admin-text">Admin Settings</span>
+            </div>
+            <div id="adminContent" class="admin-content" style="display: none;">
+                <!-- Admin content will be populated by JavaScript -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer Admin Access -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <button id="adminAccessBtn" class="admin-access-btn" onclick="handleAdminAccess()">
+                <i class="fas fa-cog"></i> Admin
+            </button>
+        </div>
+    </footer>
+
+    <!-- Admin Settings Modal -->
+    <div id="adminModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ Admin Settings</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Admin settings content will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    
+    <!-- Required Configuration (must load first) -->
+    <script src="js/core/config-manager.js"></script>
+    <script src="js/core/app-state.js"></script>
+    
+    <!-- Utility Modules -->
+    <script src="js/utils/css-loader.js"></script>
+    <script src="js/utils/data-loader.js"></script>
+    <script src="js/utils/formatters.js"></script>
+    <script src="js/utils/tax-utils.js"></script>
+    <script src="js/utils/email-generator.js"></script>
+    
+    <!-- Calculator Modules -->
+    <script src="js/calculator/multi-product.js"></script>
+    
+    <!-- UI Component System -->
+    <script src="js/ui/component-loader.js"></script>
+    
+    <!-- Core Engine Modules -->
+    <script src="js/core/calculation-engine.js"></script>
+    <script src="js/core/data-manager.js"></script>
+    <script src="js/core/event-manager.js"></script>
+    <script src="js/core/order-details-manager.js"></script>
+    <script src="js/core/kanva-calculator.js"></script>
+    <script src="js/ui/modal-manager.js"></script>
+    <script src="js/ui/template-manager.js"></script>
+    <script src="js/ui/components/product-tile.js"></script>
+    <script src="js/ui/components/order-details-table.js"></script>
+    <script src="js/ui/components/tier-badge.js"></script>
+    <script src="js/ui/components/order-calculation.js"></script>
+    <script src="js/ui/components/shipping-zone.js"></script>
+    <script src="js/ui/layouts/product-grid.js"></script>
+    <script src="js/ui/ui-manager.js"></script>
+    <script src="js/ui/product-manager.js"></script>
+    
+    <!-- Core Managers -->
+    <script src="js/ui/notification-manager.js"></script>
+    <script src="js/ui/copper-ui.js"></script>
+    
+    <!-- Utils and Helpers -->
+    
+    <!-- Integration Modules -->
+    <script src="js/integrations/copper-crm.js"></script>
+    
+    <!-- Admin System Modules (consolidated in admin folder) -->
+    <script src="js/admin/admin-utils.js"></script>
+    <script src="js/admin/admin-manager.js"></script>
+    <script src="js/admin/admin-dashboard.js"></script>
+    
+    <!-- Core Application -->
+    <script src="js/core/app.js"></script>
+
+<script>
+// === GLOBAL ERROR DEBUGGING ===
+window.addEventListener('error', function(event) {
+    console.error('🌋 GLOBAL ERROR:', event.message, '\nSource:', event.filename, '\nLine:', event.lineno, '\nColumn:', event.colno, '\nError:', event.error);
+    showGlobalDebugOverlay(event.message + '\n' + (event.error && event.error.stack ? event.error.stack : ''));
+});
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('🚨 UNHANDLED PROMISE REJECTION:', event.reason);
+    showGlobalDebugOverlay('UNHANDLED PROMISE REJECTION:\n' + (event.reason && event.reason.stack ? event.reason.stack : event.reason));
+});
+function showGlobalDebugOverlay(msg) {
+    let overlay = document.getElementById('global-debug-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'global-debug-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.bottom = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.maxHeight = '30vh';
+        overlay.style.overflowY = 'auto';
+        overlay.style.background = 'rgba(0,0,0,0.95)';
+        overlay.style.color = '#fff';
+        overlay.style.fontSize = '14px';
+        overlay.style.zIndex = '99999';
+        overlay.style.padding = '12px';
+        overlay.style.borderTop = '2px solid #e74c3c';
+        overlay.innerHTML = '<b>⚠️ Debug Overlay:</b><pre id="global-debug-msg" style="white-space:pre-wrap;"></pre>';
+        document.body.appendChild(overlay);
+    }
+    document.getElementById('global-debug-msg').textContent = msg;
+}
+</script>
+</body>
+</html>

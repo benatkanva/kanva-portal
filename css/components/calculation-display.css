@@ -1,0 +1,65 @@
+/* 
+ * Calculation Display Component
+ * For order summary and calculation display
+ */
+
+.calculation-display {
+  background-color: #ffffff;
+  border-radius: 4px;
+  margin: 0 0 12px 0;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+  color: #4A4A4A;
+}
+
+.calc-row:last-child {
+  border-bottom: none;
+}
+
+.calc-row span:first-child {
+  color: #6B7280;
+}
+
+.calc-row span:last-child {
+  font-weight: 500;
+  color: #17351A;
+}
+
+.total-row {
+  margin-top: 8px;
+  border-top: 1px solid #e1e4e8;
+  border-bottom: none;
+  padding-top: 12px;
+  font-size: 1.1rem;
+  color: #17351A;
+}
+
+.total-row span {
+  font-weight: 600;
+}
+
+.tier-info {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f3fce8;
+  border: 1px solid #93D500;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.tier-info-header {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #17351A;
+}
+
+.tier-description {
+  color: #4A4A4A;
+}

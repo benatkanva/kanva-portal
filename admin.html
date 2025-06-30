@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanva Botanicals - Admin Dashboard</title>
+    
+    <!-- Main CSS with modular imports -->
+    <link rel="stylesheet" href="css/main.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Loading State -->
+    <div id="admin-loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading Admin Dashboard...</p>
+        </div>
+    </div>
+
+    <!-- Admin Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        <i class="fas fa-leaf text-green-600 mr-2"></i>
+                        Kanva Botanicals Admin
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="save-all" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-save mr-2"></i>Save All
+                    </button>
+                    <a href="index.html" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Calculator
+                    </a>
+                    <button id="admin-logout" class="text-red-600 hover:text-red-700">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200 mb-8">
+            <nav class="-mb-px flex space-x-8">
+                <button class="admin-tab active" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                </button>
+                <button class="admin-tab" data-tab="github">
+                    <i class="fab fa-github mr-2"></i>GitHub Connector
+                </button>
+                <button class="admin-tab" data-tab="fishbowl">
+                    <i class="fas fa-fish mr-2"></i>Fishbowl ERP
+                </button>
+                <button class="admin-tab" data-tab="copper">
+                    <i class="fas fa-address-book mr-2"></i>Copper CRM
+                </button>
+                <button class="admin-tab" data-tab="products">
+                    <i class="fas fa-box mr-2"></i>Products
+                </button>
+                <button class="admin-tab" data-tab="settings">
+                    <i class="fas fa-cog mr-2"></i>Settings
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-content">
+            
+            <!-- Dashboard Tab -->
+            <div id="dashboard-content" class="tab-pane active">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- System Status -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-heartbeat text-green-600 mr-2"></i>System Status
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>Calculator:</span>
+                                <span class="text-green-600">✓ Online</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>GitHub API:</span>
+                                <span class="text-gray-500">⚪ Not Connected</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Fishbowl ERP:</span>
+                                <span class="text-gray-500">⚪ Not Connected</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Copper CRM:</span>
+                                <span class="text-gray-500">⚪ Not Connected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-bolt text-blue-600 mr-2"></i>Quick Actions
+                        </h3>
+                        <div class="space-y-2">
+                            <button class="w-full text-left px-3 py-2 hover:bg-gray-50 rounded">
+                                <i class="fas fa-download mr-2 text-green-600"></i>Export Configuration
+                            </button>
+                            <button class="w-full text-left px-3 py-2 hover:bg-gray-50 rounded">
+                                <i class="fas fa-sync mr-2 text-blue-600"></i>Sync All Data
+                            </button>
+                            <button class="w-full text-left px-3 py-2 hover:bg-gray-50 rounded">
+                                <i class="fas fa-chart-bar mr-2 text-purple-600"></i>View Analytics
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-clock text-gray-600 mr-2"></i>Recent Activity
+                        </h3>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div>Admin session started</div>
+                            <div>Loading configuration...</div>
+                            <div>Ready for management</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Getting Started -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-rocket text-orange-600 mr-2"></i>Getting Started
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 border rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">
+                                <i class="fab fa-github mr-2"></i>Connect GitHub
+                            </h4>
+                            <p class="text-sm text-gray-600 mb-3">Enable real-time JSON file management and version control.</p>
+                            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Configure GitHub API →
+                            </button>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">
+                                <i class="fas fa-fish mr-2"></i>Setup Fishbowl ERP
+                            </h4>
+                            <p class="text-sm text-gray-600 mb-3">Integrate with your ERP system for order and inventory management.</p>
+                            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Configure Fishbowl →
+                            </button>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">
+                                <i class="fas fa-address-book mr-2"></i>Enhance Copper CRM
+                            </h4>
+                            <p class="text-sm text-gray-600 mb-3">Advanced field mapping and data synchronization.</p>
+                            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Configure Copper →
+                            </button>
+                        </div>
+                        <div class="p-4 border rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-2">
+                                <i class="fas fa-box mr-2"></i>Manage Products
+                            </h4>
+                            <p class="text-sm text-gray-600 mb-3">Update product catalog, pricing, and configurations.</p>
+                            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Manage Products →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GitHub Tab -->
+            <div id="github-content" class="tab-pane">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">
+                        <i class="fab fa-github mr-3"></i>GitHub API Connector
+                    </h3>
+                    <p class="text-gray-600 mb-6">Connect to GitHub for real-time JSON configuration file management.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Connection Setup -->
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-gray-900">Connection Setup</h4>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">GitHub Token</label>
+                                <input type="password" id="github-token" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="ghp_xxxxxxxxxxxx">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Repository</label>
+                                <input type="text" id="github-repo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="username/repository">
+                            </div>
+                            <button id="github-connect" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg">
+                                <i class="fab fa-github mr-2"></i>Connect to GitHub
+                            </button>
+                        </div>
+
+                        <!-- File Management -->
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-gray-900">File Management</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600 mb-3">JSON files to sync:</p>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span>products.json</span>
+                                        <span class="text-gray-500">Not synced</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>tiers.json</span>
+                                        <span class="text-gray-500">Not synced</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>shipping.json</span>
+                                        <span class="text-gray-500">Not synced</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full">
+                                <i class="fas fa-sync mr-2"></i>Sync All Files
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fishbowl Tab -->
+            <div id="fishbowl-content" class="tab-pane">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">
+                        <i class="fas fa-fish mr-3"></i>Fishbowl ERP Integration
+                    </h3>
+                    <p class="text-gray-600 mb-6">Connect to Fishbowl ERP for order management and inventory synchronization.</p>
+                    
+                    <div class="space-y-6">
+                        <!-- Connection Settings -->
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-4">ERP Connection</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Server URL</label>
+                                    <input type="url" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://your-fishbowl-server.com">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Your API key">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Features -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="border rounded-lg p-4">
+                                <h5 class="font-semibold text-gray-900 mb-2">
+                                    <i class="fas fa-shopping-cart mr-2"></i>Order Management
+                                </h5>
+                                <p class="text-sm text-gray-600 mb-3">Push quotes as sales orders to Fishbowl ERP.</p>
+                                <button class="text-blue-600 hover:text-blue-700 text-sm">Configure →</button>
+                            </div>
+                            <div class="border rounded-lg p-4">
+                                <h5 class="font-semibold text-gray-900 mb-2">
+                                    <i class="fas fa-boxes mr-2"></i>Inventory Sync
+                                </h5>
+                                <p class="text-sm text-gray-600 mb-3">Real-time inventory levels and product updates.</p>
+                                <button class="text-blue-600 hover:text-blue-700 text-sm">Configure →</button>
+                            </div>
+                            <div class="border rounded-lg p-4">
+                                <h5 class="font-semibold text-gray-900 mb-2">
+                                    <i class="fas fa-users mr-2"></i>Customer Sync
+                                </h5>
+                                <p class="text-sm text-gray-600 mb-3">Automatic customer creation and updates.</p>
+                                <button class="text-blue-600 hover:text-blue-700 text-sm">Configure →</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copper CRM Tab -->
+            <div id="copper-content" class="tab-pane">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">
+                        <i class="fas fa-address-book mr-3"></i>Copper CRM Integration
+                    </h3>
+                    <p class="text-gray-600 mb-6">Enhanced field mapping and data synchronization with Copper CRM.</p>
+                    
+                    <div class="space-y-6">
+                        <!-- Field Mapping -->
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-4">Field Mapping Configuration</h4>
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-3 gap-4 text-sm font-medium text-gray-700">
+                                    <div>Quote Field</div>
+                                    <div>Copper Field</div>
+                                    <div>Action</div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 items-center">
+                                    <div>Customer Name</div>
+                                    <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        <option>company_name</option>
+                                        <option>contact_name</option>
+                                    </select>
+                                    <button class="text-red-600 hover:text-red-700">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 items-center">
+                                    <div>Quote Total</div>
+                                    <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        <option>opportunity_value</option>
+                                        <option>custom_quote_total</option>
+                                    </select>
+                                    <button class="text-red-600 hover:text-red-700">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                                <i class="fas fa-plus mr-2"></i>Add Field Mapping
+                            </button>
+                        </div>
+
+                        <!-- Sync Options -->
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-4">Synchronization Options</h4>
+                            <div class="space-y-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="rounded text-green-600" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Auto-create opportunities from quotes</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="rounded text-green-600">
+                                    <span class="ml-2 text-sm text-gray-700">Update existing opportunities</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="rounded text-green-600">
+                                    <span class="ml-2 text-sm text-gray-700">Sync customer contact information</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div id="products-content" class="tab-pane">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">
+                        <i class="fas fa-box mr-3"></i>Product Management
+                    </h3>
+                    <p class="text-gray-600 mb-6">Manage your product catalog, pricing, and configurations.</p>
+                    
+                    <div class="mb-4">
+                        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-plus mr-2"></i>Add Product
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full table-auto">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-4 py-4 text-sm text-gray-600">Loading products...</td>
+                                    <td colspan="4"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-content" class="tab-pane">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">
+                        <i class="fas fa-cog mr-3"></i>System Settings
+                    </h3>
+                    <p class="text-gray-600 mb-6">Configure system-wide settings and preferences.</p>
+                    
+                    <div class="space-y-6">
+                        <!-- General Settings -->
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-4">General Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Credit Card Fee Rate</label>
+                                    <input type="number" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="0.03">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Default Payment Method</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option value="wire">Wire Transfer</option>
+                                        <option value="card">Credit Card</option>
+                                        <option value="ach">ACH</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shipping Settings -->
+                        <div class="border rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-4">Shipping Configuration</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Min Shipping Rate</label>
+                                    <input type="number" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="0.005">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Max Shipping Rate</label>
+                                    <input type="number" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="0.025">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="flex justify-end">
+                            <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+                                <i class="fas fa-save mr-2"></i>Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

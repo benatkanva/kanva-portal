@@ -1,0 +1,202 @@
+/*!
+ * Activity Panel Component
+ * Styles for the compact activity panel used in the CRM sidebar
+ */
+
+/* Activity Panel Mode - Compact for CRM sidebar */
+.activity-panel-mode {
+    padding: 0;
+    margin: 0;
+    background-color: white;
+    min-height: 100vh;
+}
+
+.activity-panel-calculator {
+    background: white;
+    padding: 12px;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #93D500;
+}
+
+.activity-header h3 {
+    margin: 0;
+    color: #17351A;
+    font-size: 16px;
+}
+
+.launch-modal-btn {
+    background: linear-gradient(135deg, #93D500 0%, #7ab300 100%);
+    color: #17351A;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(147, 213, 0, 0.3);
+}
+
+.launch-modal-btn:hover {
+    background: linear-gradient(135deg, #7ab300 0%, #93D500 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(147, 213, 0, 0.4);
+}
+
+.quick-product-section {
+    margin-bottom: 15px;
+}
+
+.quick-product-section .input-group {
+    flex-direction: column;
+    margin-bottom: 10px;
+    gap: 4px;
+}
+
+.quick-product-section .input-group label {
+    min-width: auto;
+    font-size: 12px;
+    font-weight: bold;
+    color: #17351A;
+}
+
+.quick-product-section .input-group input,
+.quick-product-section .input-group select {
+    padding: 6px;
+    font-size: 12px;
+    border: 1px solid #93D500;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.quick-results {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e8 100%);
+    border: 1px solid #93D500;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 12px;
+}
+
+.quick-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.quick-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quick-item.total {
+    border-top: 1px solid #93D500;
+    padding-top: 6px;
+    margin-top: 6px;
+    font-weight: bold;
+    color: #17351A;
+}
+
+.quick-label {
+    font-size: 11px;
+    color: #666;
+}
+
+.quick-value {
+    font-weight: bold;
+    color: #17351A;
+}
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #17351A 0%, #2e5c32 100%);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: linear-gradient(135deg, #2e5c32 0%, #17351A 100%);
+    transform: translateY(-1px);
+}
+
+/* Modal Mode - Larger sizing */
+.modal-mode {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 700px;
+}
+
+/* Left Navigation Mode - Full calculator without modal */
+.left-nav-mode {
+    padding: 20px;
+    background-color: white;
+    min-height: 100vh;
+}
+
+.left-nav-mode .calculator {
+    background: white;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+}
+
+.left-nav-mode .input-group {
+    margin-bottom: 18px;
+}
+
+.left-nav-mode .input-group label {
+    min-width: 130px;
+    font-size: 14px;
+    color: #17351A;
+}
+
+.left-nav-mode .input-group input,
+.left-nav-mode .input-group select {
+    padding: 10px;
+    font-size: 14px;
+    border: 2px solid #93D500;
+    border-radius: 6px;
+}
+
+.left-nav-mode .input-group input:focus,
+.left-nav-mode .input-group select:focus {
+    outline: none;
+    border-color: #17351A;
+    box-shadow: 0 0 0 3px rgba(147, 213, 0, 0.2);
+}
+
+.left-nav-mode .header h1 {
+    font-size: 24px;
+    color: #17351A;
+}
+
+.left-nav-mode .results {
+    padding: 20px;
+    margin: 20px 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e8 100%);
+    border-left: 4px solid #93D500;
+}

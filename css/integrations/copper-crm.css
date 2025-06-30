@@ -1,0 +1,171 @@
+/* 
+ * Copper CRM Integration Styles
+ */
+
+/* Base Container */
+.copper-ui {
+    background-color: var(--color-bg);
+    border-radius: var(--radius);
+    padding: var(--space-5);
+    margin-bottom: var(--space-6);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Customer Info Section */
+.copper-customer-info {
+    margin-bottom: var(--space-5);
+}
+
+.customer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.customer-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--color-secondary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.customer-details {
+    background: var(--color-bg-light);
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+}
+
+.customer-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: var(--space-1);
+    color: var(--color-text);
+}
+
+.customer-company {
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-2);
+    font-size: 0.9rem;
+}
+
+.customer-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-4);
+    margin-top: var(--spacing-3);
+    padding-top: var(--spacing-3);
+    border-top: 1px solid var(--color-border);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+}
+
+.meta-item i {
+    color: var(--color-primary);
+    font-size: 1rem;
+}
+
+/* Activity Section */
+.activity-section {
+    margin-top: var(--spacing-6);
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-item {
+    padding: var(--spacing-3) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-1);
+}
+
+.activity-title {
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
+.activity-time {
+    font-size: 0.8125rem;
+    color: var(--color-text-light);
+}
+
+.activity-desc {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Action Buttons */
+.copper-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-top: var(--spacing-4);
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--color-border);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .copper-ui {
+        padding: var(--spacing-4);
+    }
+    
+    .customer-meta {
+        flex-direction: column;
+        gap: var(--spacing-3);
+    }
+    
+    .copper-actions {
+        flex-direction: column;
+    }
+    
+    .copper-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .copper-ui {
+        background-color: var(--color-bg-light);
+        border-color: var(--color-border);
+    }
+    
+    .customer-details {
+        background-color: rgba(255, 255, 255, 0.03);
+        border-color: var(--color-border);
+    }
+    
+    .activity-item {
+        border-bottom-color: var(--color-border);
+    }
+    
+    .copper-actions {
+        border-top-color: var(--color-border);
+    }
+}

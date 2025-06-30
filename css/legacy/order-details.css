@@ -1,0 +1,147 @@
+/* Order Details Table */
+.order-details-table-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin: 20px 0;
+    border: 1px solid #e9ecef;
+}
+
+.order-details-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.order-details-table th,
+.order-details-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.order-details-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.order-details-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.order-details-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.order-details-table .product-image {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.order-details-table .product-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.order-details-table .product-sku {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.order-details-table .quantity-input {
+    width: 60px;
+    text-align: center;
+    padding: 6px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.order-details-table .price {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.order-details-table .remove-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 5px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.order-details-table .remove-btn:hover {
+    opacity: 1;
+}
+
+/* Order Summary */
+.order-summary {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.order-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #dee2e6;
+}
+
+.order-summary-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.order-summary-label {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.order-summary-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.order-total {
+    font-size: 1.2rem;
+    color: #17351A;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .order-details-table-container {
+        overflow-x: auto;
+    }
+    
+    .order-details-table {
+        min-width: 600px;
+    }
+    
+    .order-details-table th,
+    .order-details-table td {
+        padding: 10px 12px;
+    }
+    
+    .order-details-table .product-image {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .order-summary {
+        padding: 15px;
+    }
+}

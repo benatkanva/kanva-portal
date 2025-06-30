@@ -1,0 +1,132 @@
+/* Sidebar Layout */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 250px;
+  background-color: var(--secondary-color);
+  color: white;
+  padding: var(--spacing-lg) 0;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform var(--transition-normal) ease-in-out;
+  overflow-y: auto;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  padding: 0 var(--spacing-md) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logo {
+  display: block;
+  max-width: 150px;
+  height: auto;
+  margin: 0 auto var(--spacing-md);
+}
+
+.sidebar-nav {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.sidebar-nav-item {
+  margin-bottom: var(--spacing-xs);
+}
+
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-nav-link:hover,
+.sidebar-nav-link.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.sidebar-nav-icon {
+  margin-right: var(--spacing-sm);
+  font-size: 1.1em;
+  width: 24px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  padding: var(--spacing-md);
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.main-content {
+  margin-left: 0;
+  transition: margin-left var(--transition-normal) ease-in-out;
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+}
+
+.sidebar-toggle {
+  position: fixed;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  z-index: 1001;
+  background: var(--primary-color);
+  color: var(--secondary-color);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-fast);
+}
+
+.sidebar-toggle:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (min-width: 992px) {
+  .sidebar {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 250px;
+  }
+  
+  .sidebar-toggle {
+    display: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .sidebar {
+    background-color: var(--secondary-light);
+  }
+  
+  .sidebar-nav-link {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .sidebar-nav-link:hover,
+  .sidebar-nav-link.active {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: white;
+  }
+}

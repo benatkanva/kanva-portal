@@ -1,0 +1,26 @@
+# Test files - don't upload to GitHub
+test-environment.html
+test-*.html
+local-test/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+
+# Logs and temp files
+*.log
+*.tmp
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Windsurf config
+.windsurf/
+
+# Local config overrides
+*.local.js
+config.local.js
