@@ -226,37 +226,4 @@
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .header {
-    background-color: var(--secondary-color);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  .header-nav-link {
-    color: rgba(255, 255, 255, 0.9);
-  }
-  
-  .header-nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-  
-  .dropdown-menu {
-    background-color: var(--secondary-light);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  }
-  
-  .dropdown-item {
-    color: rgba(255, 255, 255, 0.9);
-  }
-  
-  .dropdown-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-  
-  .dropdown-divider {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-}
+

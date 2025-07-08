@@ -91,15 +91,4 @@
   --container-2xl: 1536px;
 }
 
-/* Dark mode overrides */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-text: #e2e8f0;
-    --color-text-light: #a0aec0;
-    --color-bg: #1a202c;
-    --color-bg-light: #2d3748;
-    --color-bg-dark: #1a202c;
-    --color-border: #4a5568;
-    --color-border-dark: #4a5568;
-  }
-}
+

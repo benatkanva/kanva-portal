@@ -39,8 +39,8 @@
                     <img src="/assets/logo/kanva-logo.png" alt="Kanva Botanicals" class="brand-logo">
                 </div>
                 <div class="header-actions">
-                    <button id="adminToggle" class="btn btn-secondary btn-sm" style="display: none;">
-                        Admin Panel
+                    <button id="adminToggle" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-cog me-1"></i> Admin
                     </button>
                 </div>
             </div>
@@ -226,25 +226,22 @@
             </div>
         </div>
 
-        <!-- Admin Settings - Bottom Panel -->
-        <div id="adminPanel" class="admin-panel-bottom" style="display: none;">
-            <div class="admin-toggle" onclick="calculator.toggleAdminPanel()">
-                <span class="admin-cog">⚙️</span>
-                <span class="admin-text">Admin Settings</span>
-            </div>
-            <div id="adminContent" class="admin-content" style="display: none;">
-                <!-- Admin content will be populated by JavaScript -->
-            </div>
+        <!-- Admin Panel (Dynamically added by AdminManager) -->
+        <div id="adminContent" class="admin-content" style="display: none;">
+            <!-- Admin content will be populated by JavaScript -->
         </div>
 
     </div>
 
-    <!-- Footer Admin Access -->
+    <!-- Footer -->
     <footer class="app-footer">
         <div class="footer-content">
-            <button id="adminAccessBtn" class="admin-access-btn" onclick="handleAdminAccess()">
-                <i class="fas fa-cog"></i> Admin
-            </button>
+            <div class="footer-logo">
+                <img src="/assets/logo/kanva-logo.png" alt="Kanva Botanicals" class="footer-logo-img">
+            </div>
+            <div class="footer-copyright">
+                &copy; 2025 Kanva Botanicals. All rights reserved.
+            </div>
         </div>
     </footer>
 
@@ -282,7 +279,7 @@
     
     <!-- Core Engine Modules -->
     <script src="js/core/calculation-engine.js"></script>
-    <script src="js/core/data-manager.js"></script>
+    <script src="js/core/data-manager.js" type="module"></script>
     <script src="js/core/event-manager.js"></script>
     <script src="js/core/order-details-manager.js"></script>
     <script src="js/core/kanva-calculator.js"></script>
@@ -305,14 +302,16 @@
     
     <!-- Integration Modules -->
     <script src="js/integrations/copper-crm.js"></script>
+    <script src="js/integrations/git-connector.js"></script>
     
     <!-- Admin System Modules (consolidated in admin folder) -->
-    <script src="js/admin/admin-utils.js"></script>
-    <script src="js/admin/admin-manager.js"></script>
-    <script src="js/admin/admin-dashboard.js"></script>
+    <script src="js/admin/admin-utils.js?v=2"></script>
+    <script src="js/admin/admin-manager.js?v=2"></script>
+    <script src="js/admin/admin-dashboard.js?v=2"></script>
     
     <!-- Core Application -->
-    <script src="js/core/app.js"></script>
+    <!-- Removed kanva-calculator.js as it's loaded by app.js -->
+    <script src="js/core/app.js?v=6"></script>
 
 <script>
 // === GLOBAL ERROR DEBUGGING ===
@@ -346,6 +345,104 @@ function showGlobalDebugOverlay(msg) {
     }
     document.getElementById('global-debug-msg').textContent = msg;
 }
+
+// === APP INITIALIZATION ===
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Starting Kanva Portal App...');
+    
+    // Initialize configuration
+    try {
+            // Load config from window object or use defaults
+        const config = window.AppConfig || {
+            get: (key) => {
+                const configMap = {
+                    'github.token': '',
+                    'github.repo': '',
+                    'github.branch': 'main',
+                    'github.username': '',
+                    'github.email': ''
+                };
+                return configMap[key];
+            }
+        };
+        
+        // Make config available globally for debugging
+        window.AppConfig = config;
+        
+        // Configure Git integration if available
+        if (window.DataManager && window.GitConnector) {
+            const dataManager = new DataManager();
+            
+            // Only enable Git integration if we have a token
+            if (config.get('github.token')) {
+                dataManager.configureGit({
+                    repo: config.get('github.repo'),
+                    branch: config.get('github.branch'),
+                    token: config.get('github.token'),
+                    username: config.get('github.username'),
+                    email: config.get('github.email')
+                });
+                console.log('✅ Git integration configured');
+            } else {
+                console.warn('⚠️ Git token not configured. Some features may be limited.');
+            }
+            
+            // Make dataManager available globally for debugging
+            window.dataManager = dataManager;
+        }
+    } catch (error) {
+        console.error('Failed to load configuration:', error);
+    }
+    
+    // Check if KanvaApp is available
+    if (typeof KanvaApp === 'undefined') {
+        console.error('❌ KanvaApp class not found - check script loading order');
+        showGlobalDebugOverlay('ERROR: KanvaApp class not found. Check that js/core/app.js is loaded correctly.');
+        return;
+    }
+    
+    try {
+        console.log('📝 Creating KanvaApp instance...');
+        
+        // Initialize the main application
+        window.calculator = new KanvaApp();
+        
+        console.log('⚙️ Initializing KanvaApp...');
+        await window.calculator.initialize();
+        
+        console.log('✅ Kanva Portal App started successfully');
+        
+        // Hide loading overlay and show app
+        const loading = document.getElementById('loading');
+        const app = document.getElementById('app');
+        
+        if (loading) {
+            loading.style.display = 'none';
+            console.log('📱 Loading overlay hidden');
+        }
+        if (app) {
+            app.style.display = 'block';
+            console.log('📱 Main app shown');
+        }
+        
+        // Verify admin functions are available
+        if (typeof window.handleAdminAccess === 'function') {
+            console.log('✅ Admin functions available');
+        } else {
+            console.warn('⚠️ Admin functions not available yet');
+        }
+        
+    } catch (error) {
+        console.error('❌ Failed to start Kanva Portal App:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        showGlobalDebugOverlay('FAILED TO START APP:\n' + error.message + '\n' + (error.stack || ''));
+    }
+});
+
 </script>
 </body>
 </html>

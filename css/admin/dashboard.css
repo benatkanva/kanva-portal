@@ -199,22 +199,4 @@
     }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .admin-panel {
-        background-color: var(--color-bg-light);
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
-    }
-    
-    .admin-card {
-        background-color: var(--color-bg-light);
-    }
-    
-    .admin-card-header {
-        border-bottom-color: var(--color-border);
-    }
-    
-    .admin-tabs {
-        border-bottom-color: var(--color-border);
-    }
-}
+

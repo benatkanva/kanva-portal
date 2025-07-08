@@ -204,13 +204,4 @@
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .footer {
-    background-color: var(--secondary-light);
-  }
-  
-  .footer-bottom {
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-}
+

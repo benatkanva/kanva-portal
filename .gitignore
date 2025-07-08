@@ -1,26 +1,64 @@
-# Test files - don't upload to GitHub
-test-environment.html
-test-*.html
-local-test/
+# Environment Variables
+.env
+.env.*
+!.env.example
 
-# Editor files
-.vscode/
-.idea/
-*.swp
+# Dependency directories
+node_modules/
 
-# Logs and temp files
+# Build outputs
+/dist
+/build
+/.next
+/out
+
+# Logs
+logs/
 *.log
-*.tmp
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# OS files
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-desktop.ini
+
+# Test files
+test/
+test-*
+coverage/
+
+# Local development
+.cache/
+.temp/
+.tmp/
 
 # Windsurf config
 .windsurf/
 
 # Local config overrides
-*.local.js
-config.local.js
+*.local.*
+config.local.*
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (handled by check-env.js)
+!.env.example

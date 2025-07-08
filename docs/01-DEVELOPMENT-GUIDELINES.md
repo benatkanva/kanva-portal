@@ -1,10 +1,11 @@
 # 🏗️ KANVA BOTANICALS QUOTE CALCULATOR
 ## COMPREHENSIVE DEVELOPMENT GUIDELINES
 
-**Document Version**: 1.0  
+**Document Version**: 2.0  
 **Created**: June 29, 2025  
-**Project**: Kanva Botanicals Quote Calculator  
-**Status**: Production Ready - Stable Git Version  
+**Updated**: January 8, 2025  
+**Project**: Kanva Botanicals Quote Calculator Portal  
+**Status**: Active Development - Hybrid Architecture  
 
 ---
 
@@ -37,12 +38,13 @@
 - **Multi-Product Support**: Advanced line item management and calculations
 
 ### Technology Stack
-- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3
-- **Styling**: Custom CSS + Tailwind CSS utility classes
-- **Data**: JSON configuration files
-- **Server**: Node.js development server
+- **Frontend**: Vanilla JavaScript (ES6+) with modular class architecture
+- **Server**: Custom Node.js HTTP server (server.js) on port 3000
+- **Build Tools**: Webpack 5 configuration (dormant, needs alignment)
+- **Styling**: Custom modular CSS + Tailwind CSS utilities
+- **Data**: JSON-based configuration system
 - **CRM**: Copper CRM SDK integration
-- **Architecture**: Modular component-based design
+- **Architecture**: Hybrid legacy/modern structure
 
 ---
 
@@ -85,12 +87,15 @@ KanvaApp (Main Application)
 
 ### Root Directory
 ```
-kanva-quotes/
+kanva-portal/
 ├── index.html                    # Main application entry point
-├── server.js                     # Development server (port 8080)
-├── admin-preview.html            # Standalone admin dashboard
+├── server.js                     # Custom Node.js HTTP server (port 3000)
+├── admin.html                    # Standalone admin dashboard
 ├── copper_field_mapper.html      # CRM field mapping tool
-└── MIGRATION-GUIDE.md            # Refactoring documentation
+├── package.json                  # NPM dependencies and scripts
+├── webpack.*.js                  # Webpack build configuration (needs alignment)
+├── start-server.bat              # Windows batch file for server startup
+└── MIGRATION-GUIDE.md            # Legacy refactoring documentation
 ```
 
 ### Data Configuration (`/data/`)
@@ -136,29 +141,29 @@ css/
 ### JavaScript Modules (`/js/`)
 ```
 js/
-├── core/
-│   ├── app.js                    # Main application lifecycle
-│   ├── data-manager.js           # Data loading and management
-│   └── order-details-manager.js # Line items, PDF, email
-├── calculator/
-│   ├── main-calculator.js        # PRIMARY calculator class
-│   ├── base-calculator.js        # Shared calculator utilities
-│   ├── pricing-calculator.js     # Pricing logic
-│   └── multi-product.js          # Multi-product utilities
-├── admin/
-│   ├── admin-utils.js            # Admin utilities (object literal)
-│   ├── admin-dashboard.js        # Full admin dashboard class
-│   ├── admin-manager.js          # Admin state management
-│   └── form-manager.js           # Admin form handling
-├── ui/
-│   ├── ui-manager.js             # PRIMARY UI rendering
-│   ├── notification-manager.js   # Toast notifications
-│   └── modal-manager.js          # Modal dialogs
-├── utils/
-│   ├── data-loader.js            # JSON loading (static methods)
-│   ├── formatters.js             # Currency, number formatting
-│   └── tax-utils.js              # Tax calculation (object literal)
-└── copper-integration.js         # Comprehensive CRM integration
+├── core/                         # Core application classes (8 modules)
+│   ├── app.js                   # Main KanvaApp class and initialization
+│   ├── kanva-calculator.js      # Core calculator engine
+│   ├── calculation-engine.js     # Pricing calculations
+│   ├── data-manager.js          # Data loading/management
+│   ├── app-state.js             # Application state management
+│   ├── config-manager.js        # Configuration management
+│   ├── event-manager.js         # Event handling system
+│   └── order-details-manager.js  # Line item management
+├── ui/                          # User interface components (14 modules)
+│   ├── ui-manager.js            # Main UI controller
+│   ├── product-selector.js      # Product selection UI
+│   ├── order-details-ui.js      # Order management UI
+│   ├── admin-ui.js              # Admin interface
+│   └── [10+ additional UI modules]
+├── admin/                       # Admin-specific modules (4 modules)
+├── calculator/                  # Calculator-specific UI (4 modules)
+├── integrations/                # External integrations (1 module)
+│   └── copper-integration.js    # CRM integration
+└── utils/                       # Utility functions (7 modules)
+    ├── formatting.js            # Number/currency formatting
+    ├── validation.js            # Input validation
+    └── [5 additional utility modules]
 ```
 
 ### Assets (`/assets/`)
@@ -488,16 +493,16 @@ if (isAdmin) {
 }
 ```
 
-#### Configuration Management
-- Settings stored in localStorage
-- JSON configuration files for data
-- UI updates reflect configuration changes immediately
-
----
-
 ## 🚀 DEPLOYMENT PROCEDURES
 
-### Development Environment
+### Current Build Status
+⚠️ **IMPORTANT**: The project has a hybrid build configuration:
+- **Primary Server**: Custom Node.js server (`server.js`) - ACTIVE
+- **Webpack Configuration**: Present but dormant, needs alignment
+- **Entry Point**: `index.html` in root directory (not `src/index.js`)
+- **Package Scripts**: `npm start` uses webpack-dev-server (non-functional)
+
+### Development Environment Setup
 ```bash
 # Start development server
 node server.js

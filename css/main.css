@@ -20,6 +20,7 @@
 
 /* 4. Components - Reusable UI elements */
 @import url('/css/components/activity-panel.css');
+@import url('/css/components/admin-dashboard.css');
 @import url('/css/components/alerts.css');
 @import url('/css/components/buttons.css');
 @import url('/css/components/cards.css');
