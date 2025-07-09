@@ -33,6 +33,7 @@
 
 /* 5. Admin - Admin interface styles */
 @import url('/css/admin/dashboard.css');
+@import url('/css/admin/admin-dashboard.css');  /* ← ADD THIS LINE */
 @import url('/css/admin/forms.css');
 @import url('/css/admin/tables.css');
 
