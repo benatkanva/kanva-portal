@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanva Portal - Copper CRM Integration Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #93D500;
+            border-bottom: 2px solid #93D500;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: #f9f9f9;
+            border-left: 4px solid #93D500;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background: #93D500;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        .test-button:hover {
+            background: #7fb300;
+        }
+        .secondary-button {
+            background: #6c757d;
+        }
+        .secondary-button:hover {
+            background: #5a6268;
+        }
+        .result-panel {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .warning {
+            color: #ffc107;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .test-card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .environment-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .standalone {
+            background: #17a2b8;
+            color: white;
+        }
+        .copper {
+            background: #ff6b6b;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kanva Portal - Copper CRM Integration Test</h1>
+    
+    <div id="environment-info">
+        <p>
+            Current Environment: 
+            <span id="environment-type" class="environment-badge">Detecting...</span>
+        </p>
+    </div>
+    
+    <div class="test-section">
+        <h2>1. Environment Detection</h2>
+        <p>Verify that the application correctly detects whether it's running in Copper CRM or standalone mode.</p>
+        <button class="test-button" onclick="testEnvironmentDetection()">Test Environment Detection</button>
+        <div id="environment-result" class="result-panel"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Admin Dashboard Initialization</h2>
+        <p>Test that the AdminManager and AdminDashboard initialize correctly.</p>
+        <button class="test-button" onclick="testAdminInitialization()">Test Admin Initialization</button>
+        <div id="admin-result" class="result-panel"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Copper CRM Integration</h2>
+        <p>Test the Copper CRM integration functionality.</p>
+        <button class="test-button" onclick="testCopperIntegration()">Test Copper Integration</button>
+        <div id="copper-result" class="result-panel"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Cache Management</h2>
+        <p>Test the cache busting functionality to ensure script changes take effect.</p>
+        <button class="test-button" onclick="testCacheBusting()">Test Cache Busting</button>
+        <button class="test-button secondary-button" onclick="forceRefreshCache()">Force Refresh Cache</button>
+        <div id="cache-result" class="result-panel"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Full Integration Test</h2>
+        <p>Run a complete end-to-end test of the admin dashboard and Copper CRM integration.</p>
+        <button class="test-button" onclick="runFullIntegrationTest()">Run Full Test</button>
+        <div id="full-test-result" class="result-panel"></div>
+    </div>
+    
+    <!-- Load required scripts -->
+    <script>
+        // Helper function to log results
+        function logResult(elementId, message, type = 'info') {
+            const resultPanel = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            resultPanel.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            resultPanel.scrollTop = resultPanel.scrollHeight;
+        }
+        
+        // Test environment detection
+        function testEnvironmentDetection() {
+            const resultPanel = document.getElementById('environment-result');
+            resultPanel.innerHTML = '';
+            
+            logResult('environment-result', 'Testing environment detection...');
+            
+            // Check if Copper SDK is available
+            const isCopperAvailable = typeof window.Copper !== 'undefined';
+            
+            if (isCopperAvailable) {
+                logResult('environment-result', 'Copper SDK detected! Running in Copper CRM environment.', 'success');
+                document.getElementById('environment-type').textContent = 'Copper CRM';
+                document.getElementById('environment-type').className = 'environment-badge copper';
+            } else {
+                logResult('environment-result', 'Copper SDK not detected. Running in standalone mode.', 'info');
+                document.getElementById('environment-type').textContent = 'Standalone';
+                document.getElementById('environment-type').className = 'environment-badge standalone';
+            }
+            
+            // Check for CopperIntegration module
+            if (typeof window.CopperIntegration !== 'undefined') {
+                logResult('environment-result', 'CopperIntegration module is available.', 'success');
+            } else {
+                logResult('environment-result', 'CopperIntegration module is not available.', 'error');
+            }
+            
+            return isCopperAvailable;
+        }
+        
+        // Test admin initialization
+        function testAdminInitialization() {
+            const resultPanel = document.getElementById('admin-result');
+            resultPanel.innerHTML = '';
+            
+            logResult('admin-result', 'Testing admin initialization...');
+            
+            // Check if AdminManager is defined
+            if (typeof AdminManager !== 'function') {
+                logResult('admin-result', 'AdminManager is not defined.', 'error');
+                return false;
+            }
+            logResult('admin-result', 'AdminManager is defined.', 'success');
+            
+            // Check if AdminDashboard is defined
+            if (typeof AdminDashboard !== 'function') {
+                logResult('admin-result', 'AdminDashboard is not defined.', 'error');
+                return false;
+            }
+            logResult('admin-result', 'AdminDashboard is defined.', 'success');
+            
+            // Check if app has AdminManager instance
+            if (!window.app || !window.app.modules || !window.app.modules.admin) {
+                logResult('admin-result', 'App does not have AdminManager instance.', 'warning');
+            } else {
+                logResult('admin-result', 'App has AdminManager instance.', 'success');
+            }
+            
+            return true;
+        }
+        
+        // Test Copper CRM integration
+        function testCopperIntegration() {
+            const resultPanel = document.getElementById('copper-result');
+            resultPanel.innerHTML = '';
+            
+            logResult('copper-result', 'Testing Copper CRM integration...');
+            
+            // Check if CopperIntegration is defined
+            if (typeof CopperIntegration !== 'object') {
+                logResult('copper-result', 'CopperIntegration is not defined.', 'error');
+                return false;
+            }
+            logResult('copper-result', 'CopperIntegration is defined.', 'success');
+            
+            // Check if initialize method exists
+            if (typeof CopperIntegration.initialize !== 'function') {
+                logResult('copper-result', 'CopperIntegration.initialize is not a function.', 'error');
+                return false;
+            }
+            logResult('copper-result', 'CopperIntegration.initialize is a function.', 'success');
+            
+            // Check saved credentials
+            const apiKey = localStorage.getItem('copperApiKey');
+            const userEmail = localStorage.getItem('copperUserEmail');
+            
+            if (apiKey && userEmail) {
+                logResult('copper-result', 'Copper credentials found in localStorage.', 'success');
+                logResult('copper-result', `User Email: ${userEmail.substring(0, 3)}...${userEmail.substring(userEmail.indexOf('@'))}`, 'info');
+                logResult('copper-result', `API Key: ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`, 'info');
+            } else {
+                logResult('copper-result', 'Copper credentials not found in localStorage.', 'warning');
+            }
+            
+            return true;
+        }
+        
+        // Test cache busting
+        function testCacheBusting() {
+            const resultPanel = document.getElementById('cache-result');
+            resultPanel.innerHTML = '';
+            
+            logResult('cache-result', 'Testing cache busting functionality...');
+            
+            // Check if CacheBuster is defined
+            if (typeof window.CacheBuster !== 'object') {
+                logResult('cache-result', 'CacheBuster is not defined.', 'error');
+                return false;
+            }
+            logResult('cache-result', 'CacheBuster is defined.', 'success');
+            
+            // Check script tags for cache busting parameters
+            const scripts = document.querySelectorAll('script[src]');
+            let cacheBustedCount = 0;
+            
+            scripts.forEach(script => {
+                const src = script.getAttribute('src');
+                if (src.includes('?v=') || src.includes('&_cb=')) {
+                    cacheBustedCount++;
+                    logResult('cache-result', `Script with cache busting: ${src}`, 'info');
+                }
+            });
+            
+            logResult('cache-result', `Found ${cacheBustedCount} scripts with cache busting parameters.`, 'success');
+            
+            return true;
+        }
+        
+        // Force refresh cache
+        function forceRefreshCache() {
+            const resultPanel = document.getElementById('cache-result');
+            resultPanel.innerHTML = '';
+            
+            logResult('cache-result', 'Forcing cache refresh...');
+            
+            if (typeof window.refreshCache === 'function') {
+                const count = window.refreshCache();
+                logResult('cache-result', `Refreshed ${count} scripts with cache busting.`, 'success');
+                return true;
+            } else {
+                logResult('cache-result', 'refreshCache function not available.', 'error');
+                return false;
+            }
+        }
+        
+        // Run full integration test
+        async function runFullIntegrationTest() {
+            const resultPanel = document.getElementById('full-test-result');
+            resultPanel.innerHTML = '';
+            
+            logResult('full-test-result', 'Running full integration test...');
+            
+            // Step 1: Environment detection
+            logResult('full-test-result', '1. Testing environment detection...', 'info');
+            const envResult = testEnvironmentDetection();
+            
+            // Step 2: Admin initialization
+            logResult('full-test-result', '2. Testing admin initialization...', 'info');
+            const adminResult = testAdminInitialization();
+            
+            // Step 3: Copper integration
+            logResult('full-test-result', '3. Testing Copper CRM integration...', 'info');
+            const copperResult = testCopperIntegration();
+            
+            // Step 4: Cache management
+            logResult('full-test-result', '4. Testing cache management...', 'info');
+            const cacheResult = testCacheBusting();
+            
+            // Step 5: Test admin dashboard opening
+            logResult('full-test-result', '5. Testing admin dashboard opening...', 'info');
+            try {
+                if (typeof handleAdminAccess === 'function') {
+                    logResult('full-test-result', 'handleAdminAccess function is available.', 'success');
+                    logResult('full-test-result', 'You can now manually test opening the admin dashboard.', 'info');
+                } else {
+                    logResult('full-test-result', 'handleAdminAccess function is not available.', 'error');
+                }
+            } catch (error) {
+                logResult('full-test-result', `Error testing admin dashboard: ${error.message}`, 'error');
+            }
+            
+            // Final result
+            const allPassed = envResult && adminResult && copperResult && cacheResult;
+            if (allPassed) {
+                logResult('full-test-result', 'All tests passed successfully!', 'success');
+            } else {
+                logResult('full-test-result', 'Some tests failed. Check the results above.', 'error');
+            }
+            
+            return allPassed;
+        }
+        
+        // Run environment detection on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testEnvironmentDetection, 1000);
+        });
+    </script>
+    
+    <!-- Load required scripts from main app -->
+    <script>
+        // Function to load scripts dynamically
+        function loadScript(src, callback) {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = callback;
+            document.head.appendChild(script);
+            return script;
+        }
+        
+        // Load essential scripts in sequence
+        loadScript('js/admin/cache-buster.js?v=20250709', () => {
+            loadScript('js/core/data-manager.js?v=20250709', () => {
+                loadScript('js/core/calculation-engine.js?v=20250709', () => {
+                    loadScript('js/core/event-manager.js?v=20250709', () => {
+                        loadScript('js/ui/ui-manager.js?v=20250709', () => {
+                            loadScript('js/core/kanva-calculator.js?v=20250709', () => {
+                                loadScript('js/admin/admin-manager.js?v=20250709', () => {
+                                    loadScript('js/admin/admin-dashboard.js?v=20250709', () => {
+                                        loadScript('js/integrations/copper-crm.js?v=20250709', () => {
+                                            loadScript('js/admin/admin-test.js?v=20250709', () => {
+                                                console.log('All scripts loaded successfully!');
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

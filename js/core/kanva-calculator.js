@@ -5,18 +5,46 @@
 
 class KanvaCalculator {
     constructor() {
+        // Check for required dependencies
+        if (typeof DataManager === 'undefined') {
+            console.error('❌ DataManager is not defined. Make sure it is loaded before KanvaCalculator.');
+            throw new Error('DataManager is required');
+        }
+        if (typeof CalculationEngine === 'undefined') {
+            console.error('❌ CalculationEngine is not defined. Make sure it is loaded before KanvaCalculator.');
+            throw new Error('CalculationEngine is required');
+        }
+        if (typeof UIManager === 'undefined') {
+            console.error('❌ UIManager is not defined. Make sure it is loaded before KanvaCalculator.');
+            throw new Error('UIManager is required');
+        }
+        if (typeof EventManager === 'undefined') {
+            console.error('❌ EventManager is not defined. Make sure it is loaded before KanvaCalculator.');
+            throw new Error('EventManager is required');
+        }
+
+        // Initialize core components
         this.dataManager = new DataManager();
         this.calculationEngine = new CalculationEngine();
         this.uiManager = new UIManager(this);
         this.eventManager = new EventManager(this);
         this.adminManager = null;
         
-        // Initialize Copper integration if available
         if (typeof CopperIntegration !== 'undefined') {
+            // Use CopperIntegration as an object, not as a constructor
             this.copper = CopperIntegration;
-            this.copperUI = new CopperUI(this);
+            // Only initialize CopperUI if available
+            if (typeof CopperUI !== 'undefined') {
+                if (typeof CopperUI === 'function') {
+                    this.copperUI = new CopperUI(this);
+                } else {
+                    this.copperUI = CopperUI;
+                }
+            } else {
+                console.warn('⚠️ CopperUI not found. Some CRM UI features will be disabled.');
+            }
         } else {
-            console.warn('Copper CRM integration not available');
+            console.warn('⚠️ CopperIntegration not found. CRM features will be disabled.');
         }
         
         // Core state

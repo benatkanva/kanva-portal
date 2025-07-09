@@ -1083,6 +1083,97 @@
 }
 
 /* Dark Mode Support (if needed) */
+/* Loading Spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin: 0 auto 15px;
+}
+
+.admin-loading .spinner {
+    border-top-color: #93D500;
+}
+
+/* Error Messages */
+.admin-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+    border-left: 4px solid #dc3545;
+    animation: slideIn 0.3s ease-out;
+}
+
+.admin-success {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Connection Status Indicators */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+    background-color: rgba(147, 213, 0, 0.15);
+    color: #93D500;
+    border: 1px solid rgba(147, 213, 0, 0.3);
+}
+
+.connection-status.disconnected {
+    background-color: rgba(255, 76, 76, 0.15);
+    color: #ff4c4c;
+    border: 1px solid rgba(255, 76, 76, 0.3);
+}
+
+.connection-status i {
+    font-size: 1rem;
+}
+
+.copper-settings-container {
+    position: relative;
+}
+
+#copperConnectionStatus {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    margin: 0;
+    animation: fadeIn 0.5s ease;
+}
+
+/* Dark Mode */
 @media (prefers-color-scheme: dark) {
     .admin-dashboard-content {
         background: #1a1a1a;

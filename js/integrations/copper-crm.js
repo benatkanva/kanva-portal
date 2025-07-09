@@ -621,10 +621,48 @@ const CopperIntegration = {
     },
 
     // Configure SDK settings based on current mode
-    configureSdk: function() {
-        if (!appState.sdk) return;
-
+    configureSdk: function(credentials = null) {
+        if (!appState.sdk) {
+            console.log('⚠️ Copper SDK not initialized, attempting to initialize...');
+            this.initialize();
+            if (!appState.sdk) return false;
+        }
+        
         try {
+            // Set SDK configuration
+            const config = {
+                // Default config for all modes
+                logLevel: 'info',
+                enableTracking: true
+            };
+            
+            // Apply credentials if provided (from admin dashboard)
+            if (credentials) {
+                if (credentials.apiKey) {
+                    config.apiKey = credentials.apiKey;
+                    console.log('🔑 Using API key from admin dashboard');
+                }
+                
+                if (credentials.userEmail) {
+                    config.userEmail = credentials.userEmail;
+                    console.log('👤 Using user email from admin dashboard');
+                }
+            } else {
+                // Try to load from localStorage if not provided
+                const savedApiKey = localStorage.getItem('copperApiKey');
+                const savedUserEmail = localStorage.getItem('copperUserEmail');
+                
+                if (savedApiKey && savedUserEmail) {
+                    config.apiKey = savedApiKey;
+                    config.userEmail = savedUserEmail;
+                    console.log('🔑 Using saved credentials from localStorage');
+                }
+            }
+            
+            // Apply configuration
+            appState.sdk.setConfig(config);
+            
+            // Configure UI based on mode
             if (appState.isModalMode) {
                 appState.sdk.setAppUI({
                     width: 1000,
@@ -632,7 +670,7 @@ const CopperIntegration = {
                     showActionBar: false,
                     disableAddButton: true
                 });
-                console.log('📐 Configured SDK for modal mode (1000x700)');
+                console.log('📋 Configured SDK for modal mode (1000x700)');
             } else if (appState.isActivityPanel) {
                 appState.sdk.setAppUI({
                     width: 400,
@@ -640,10 +678,14 @@ const CopperIntegration = {
                     showActionBar: false,
                     disableAddButton: true
                 });
-                console.log('📐 Configured SDK for activity panel mode (400x600)');
+                console.log('📋 Configured SDK for activity panel mode (400x600)');
             }
+            
+            console.log('✅ Copper SDK configured successfully');
+            return true;
         } catch (error) {
-            console.error('❌ Error configuring SDK:', error);
+            console.error('❌ Error configuring Copper SDK:', error);
+            return false;
         }
     },
 

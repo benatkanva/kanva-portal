@@ -183,51 +183,79 @@
 
     <!-- Scripts -->
     
-    <!-- Required Configuration (must load first) -->
+    <!-- 1. Core Dependencies (must load first) -->
     <script src="js/core/config-manager.js"></script>
     <script src="js/core/app-state.js"></script>
     
-    <!-- Utility Modules -->
+    <!-- 2. Utility Modules -->
     <script src="js/utils/css-loader.js"></script>
+    <script src="js/ui/notification-manager.js?v=20250709"></script>
     <script src="js/utils/data-loader.js"></script>
     <script src="js/utils/formatters.js"></script>
     <script src="js/utils/tax-utils.js"></script>
+    <script src="js/utils/email-data-formatter.js"></script>
     <script src="js/utils/email-generator.js"></script>
     
-    <!-- Calculator Modules -->
-    <script src="js/calculator/multi-product-manager.js"></script>
-    <script src="js/calculator/kanva-calculator.js"></script>
+    <!-- 3. Data Management -->
+    <script src="js/core/data-manager.js"></script>
+    <script>
+        console.log('DataManager defined:', typeof DataManager !== 'undefined');
+        if (typeof DataManager !== 'undefined') {
+            console.log('DataManager is a:', typeof DataManager);
+        }
+    </script>
     
-    <!-- Core Dependencies -->
-    <script src="js/utils/notification-manager.js?v=<?=time()?>"></script>
-    <script src="js/data/data-manager.js?v=<?=time()?>"></script>
+    <!-- 4. Core Calculator Dependencies -->
+    <script src="js/core/calculation-engine.js"></script>
+    <script src="js/core/event-manager.js"></script>
     
-    <!-- UI Components -->
-    <script src="js/ui/css-loader.js?v=<?=time()?>"></script>
-    <script src="js/ui/component-loader.js?v=<?=time()?>"></script>
-    <script src="js/ui/components/product-tile.js?v=<?=time()?>"></script>
-    <script src="js/ui/components/order-details-table.js?v=<?=time()?>"></script>
-    <script src="js/ui/components/tier-badge.js?v=<?=time()?>"></script>
-    <script src="js/ui/components/order-calculation.js?v=<?=time()?>"></script>
-    <script src="js/ui/components/shipping-zone.js?v=<?=time()?>"></script>
-    <script src="js/ui/components/product-grid.js?v=<?=time()?>"></script>
-    <script src="js/ui/ui-manager.js?v=<?=time()?>"></script>
-    <script src="js/ui/order-details-manager.js?v=<?=time()?>"></script>
+    <!-- 5. UI Manager (must load before kanva-calculator) -->
+    <script src="js/ui/component-loader.js"></script>
+    <script src="js/ui/components/product-tile.js"></script>
+    <script src="js/ui/components/order-details-table.js"></script>
+    <script src="js/ui/components/tier-badge.js"></script>
+    <script src="js/ui/components/order-calculation.js"></script>
+    <script src="js/ui/components/shipping-zone.js"></script>
+    <script src="js/ui/layouts/product-grid.js?v=20250709"></script>
+    <script src="js/ui/ui-manager.js"></script>
     
-    <!-- Product Management -->
-    <script src="js/products/product-manager.js?v=<?=time()?>"></script>
+    <!-- 6. Kanva Calculator (depends on UI Manager and other components) -->
+    <script src="js/core/kanva-calculator.js"></script>
     
-    <!-- CRM Integration -->
-    <script src="js/integrations/copper-crm.js?v=<?=time()?>"></script>
-    <script src="js/integrations/copper-ui.js?v=<?=time()?>"></script>
+    <!-- 7. Order Details Manager (depends on Kanva Calculator) -->
+    <script src="js/core/order-details-manager.js?v=20250709"></script>
     
-    <!-- Main Application -->
-    <script src="js/core/app.js?v=<?=time()?>"></script>
+    <!-- 8. Product Management (depends on Kanva Calculator) -->
+    <script src="js/calculator/multi-product.js?v=20250709"></script>
+    <script src="js/ui/product-manager.js?v=20250709"></script>
     
-    <!-- Admin Panel (loaded after app.js to ensure dependencies are available) -->
-    <script src="js/admin/admin-dashboard.js?v=<?=time()?>"></script>
-    <script src="js/admin/admin-manager.js?v=<?=time()?>"></script>
+    <!-- 9. Admin Panel (depends on Kanva Calculator) -->
+    <script src="js/admin/admin-manager.js?v=20250709"></script>
+    <script src="js/admin/admin-dashboard.js?v=20250709"></script>
+    <script src="js/admin/admin-test.js?v=20250709"></script>
+    <script src="js/admin/integration-validator.js?v=20250709"></script>
+    
+    <!-- 10. CRM Integration (can load in parallel) -->
+    <script src="js/integrations/copper-crm.js?v=20250709"></script>
+    <script src="js/ui/copper-ui.js?v=20250709"></script>
+    
+    <!-- 11. Main Application (loads last) -->
+    <script>
+        // Debug script to check global variables
+        console.log('=== SCRIPT LOADING DEBUG ===');
+        console.log('DataManager defined:', typeof DataManager !== 'undefined' ? '✅' : '❌');
+        console.log('CalculationEngine defined:', typeof CalculationEngine !== 'undefined' ? '✅' : '❌');
+        console.log('EventManager defined:', typeof EventManager !== 'undefined' ? '✅' : '❌');
+        console.log('UIManager defined:', typeof UIManager !== 'undefined' ? '✅' : '❌');
+        console.log('AdminManager defined:', typeof AdminManager !== 'undefined' ? '✅' : '❌');
+        console.log('KanvaCalculator defined:', typeof KanvaCalculator !== 'undefined' ? '✅' : '❌');
+        console.log('================================');
+    </script>
+    <script src="js/core/app.js?v=20250709"></script>
 
+    <!-- Cache Buster Script -->
+    <script src="js/admin/cache-buster.js?v=20250709"></script>
+    
     <!-- Debug Script (Remove in production) -->
     <script src="debug-delete.js"></script>
 

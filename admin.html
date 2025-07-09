@@ -5,10 +5,226 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kanva Botanicals - Admin Dashboard</title>
     
-    <!-- Main CSS with modular imports -->
-    <link rel="stylesheet" href="css/main.css">
+    <!-- Base CSS Reset -->
+    <style>
+        /* Base Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Ensure full height layout */
+        html, body, #app {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        /* Base styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.5;
+            color: #333;
+            background-color: #f9fafb;
+        }
+        
+        /* Admin layout */
+        #admin-dashboard {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f9fafb;
+        }
+        
+        /* Tab styles */
+        .tab-pane {
+            display: none;
+            padding: 1.5rem;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Form styles */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.9375rem;
+            line-height: 1.5;
+            color: #111827;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            border-color: #3b82f6;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Button styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1.5;
+            text-align: center;
+            text-decoration: none;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        
+        .btn-primary {
+            color: #fff;
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+            border-color: #1d4ed8;
+        }
+        
+        .btn-danger {
+            color: #fff;
+            background-color: #ef4444;
+            border-color: #ef4444;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+            border-color: #b91c1c;
+        }
+        
+        /* Card styles */
+        .card {
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            padding: 1rem 1.5rem;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Table styles */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .table th {
+            font-weight: 600;
+            color: #374151;
+            background-color: #f9fafb;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Alert styles */
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.375rem;
+        }
+        
+        .alert-success {
+            color: #065f46;
+            background-color: #d1fae5;
+            border-color: #a7f3d0;
+        }
+        
+        .alert-error {
+            color: #991b1b;
+            background-color: #fee2e2;
+            border-color: #fecaca;
+        }
+        
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+        
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 0.25rem solid rgba(59, 130, 246, 0.2);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+    
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <link rel="stylesheet" href="/css/admin/forms.css">
+    <link rel="stylesheet" href="/css/admin/tables.css">
+    
+    <!-- Component CSS -->
+    <link rel="stylesheet" href="/css/components/buttons.css">
+    <link rel="stylesheet" href="/css/components/forms.css">
+    <link rel="stylesheet" href="/css/components/modals.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/components/tables.css">
+    <link rel="stylesheet" href="/css/components/tabs.css">
 </head>
 <body class="bg-gray-50">
     <!-- Loading State -->
@@ -441,127 +657,204 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/admin-dashboard.js"></script>
+    <!-- Core Dependencies -->
+    <script src="/js/utils/helpers.js"></script>
+    <script src="/js/core/calculation-engine.js"></script>
+    <script src="/js/core/data-manager.js"></script>
+    
+    <!-- UI Dependencies -->
+    <script src="/js/ui/notification-manager.js"></script>
+    <script src="/js/ui/template-manager.js"></script>
+    <script src="/js/ui/modal-manager.js"></script>
+    <script src="/js/ui/forms.js"></script>
+    <script src="/js/ui/tabs.js"></script>
+    <script src="/js/ui/notifications.js"></script>
+    <script src="/js/ui/ui-manager.js"></script>
+    
+    <!-- Main Calculator -->
+    <script src="/js/core/kanva-calculator.js"></script>
+    
+    <!-- Admin Scripts -->
+    <script src="/js/admin/admin-manager.js"></script>
+    <script src="/js/admin/admin-dashboard.js"></script>
+    
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <link rel="stylesheet" href="/css/admin/forms.css">
+    <link rel="stylesheet" href="/css/admin/tables.css">
+    
     <script>
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', async () => {
-            const loadingScreen = document.getElementById('admin-loading');
+            const loadingElement = document.getElementById('admin-loading');
             
             try {
-                // Check if AdminDashboard class is available
-                if (typeof window.AdminDashboard === 'undefined') {
+                console.log('🚀 Initializing Admin Dashboard...');
+                
+                // Initialize core calculator if not already initialized
+                if (typeof KanvaCalculator === 'function' && !window.calculator) {
+                    console.log('Initializing KanvaCalculator...');
+                    window.calculator = new KanvaCalculator({
+                        dataManager: new DataManager()
+                    });
+                    await window.calculator.init();
+                } else if (!window.calculator) {
+                    console.warn('KanvaCalculator not found, using minimal implementation');
+                    window.calculator = {
+                        dataManager: {
+                            getData: () => ({}),
+                            saveData: async () => {}
+                        },
+                        init: async () => {}
+                    };
+                }
+                
+                // Initialize admin manager if not already initialized
+                if (typeof AdminManager === 'function' && !window.adminManager) {
+                    console.log('Initializing AdminManager...');
+                    window.adminManager = new AdminManager({
+                        calculator: window.calculator,
+                        dataManager: window.calculator.dataManager || {
+                            getData: () => ({}),
+                            saveData: async () => {}
+                        }
+                    });
+                    await window.adminManager.init();
+                }
+                
+                if (typeof AdminDashboard !== 'function') {
                     throw new Error('AdminDashboard class not found. Check if admin-dashboard.js is loaded correctly.');
                 }
                 
+                // Initialize Admin Dashboard
                 console.log('Initializing AdminDashboard...');
-                
-                // Initialize AdminDashboard with required dependencies
-                const adminDashboard = new window.AdminDashboard({
-                    calculator: window.calculator || {
-                        // Mock calculator methods if not available
-                        getProducts: () => [],
-                        getTiers: () => [],
-                        getShipping: () => ({}),
-                        saveData: () => Promise.resolve()
-                    },
-                    adminManager: window.adminManager || {
-                        // Mock adminManager methods if not available
-                        isAdmin: () => true,
-                        checkAuth: () => Promise.resolve(true),
-                        dataManager: {
-                            saveConfig: () => Promise.resolve(),
-                            getConfig: () => ({})
-                        }
-                    }
+                const dashboard = new AdminDashboard({
+                    calculator: window.calculator,
+                    adminManager: window.adminManager
                 });
                 
                 // Initialize the dashboard
-                await adminDashboard.init();
+                await dashboard.init();
+                
+                // Store dashboard instance globally for debugging
+                window.adminDashboard = dashboard;
                 
                 // Set up tab switching
                 const tabs = document.querySelectorAll('.admin-tab');
-                const tabContents = document.querySelectorAll('.tab-pane');
-                
                 tabs.forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        // Remove active class from all tabs and contents
-                        tabs.forEach(t => t.classList.remove('active'));
-                        tabContents.forEach(c => c.classList.remove('active'));
-                        
-                        // Add active class to clicked tab and corresponding content
-                        tab.classList.add('active');
+                    tab.addEventListener('click', (e) => {
+                        e.preventDefault();
                         const tabId = tab.getAttribute('data-tab');
-                        const contentEl = document.getElementById(`${tabId}-content`);
-                        if (contentEl) {
-                            contentEl.classList.add('active');
-                            // Load the tab content if it hasn't been loaded yet
-                            adminDashboard.loadTabContent(tabId);
+                        console.log('Switching to tab:', tabId);
+                        
+                        // Update active tab
+                        tabs.forEach(t => t.classList.remove('active', 'border-green-500', 'text-green-600'));
+                        tab.classList.add('active', 'border-green-500', 'text-green-600');
+                        
+                        // Show corresponding tab content
+                        document.querySelectorAll('.tab-pane').forEach(pane => {
+                            pane.classList.remove('active');
+                        });
+                        
+                        const pane = document.getElementById(`${tabId}-content`);
+                        if (pane) {
+                            pane.classList.add('active');
+                        }
+                        
+                        // Load tab content if needed
+                        if (typeof dashboard.loadTabContent === 'function') {
+                            dashboard.loadTabContent(tabId);
                         }
                     });
                 });
                 
-                // Load the default tab (dashboard)
-                const defaultTab = document.querySelector('.admin-tab.active');
-                if (defaultTab) {
-                    const tabId = defaultTab.getAttribute('data-tab');
-                    adminDashboard.loadTabContent(tabId);
+                // Initialize first tab as active
+                if (tabs.length > 0) {
+                    tabs[0].click();
                 }
                 
-                // Handle save button
+                // Set up save all button
                 const saveButton = document.getElementById('save-all');
                 if (saveButton) {
                     saveButton.addEventListener('click', async () => {
                         try {
-                            await adminDashboard.saveChanges();
+                            saveButton.disabled = true;
+                            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+                            
+                            await dashboard.saveChanges();
+                            
+                            // Show success notification
+                            if (window.showNotification) {
+                                window.showNotification('All changes saved successfully!', 'success');
+                            } else {
+                                alert('All changes saved successfully!');
+                            }
                         } catch (error) {
                             console.error('Error saving changes:', error);
-                            adminDashboard.showNotification(`Failed to save changes: ${error.message}`, 'error');
+                            if (window.showNotification) {
+                                window.showNotification('Failed to save changes: ' + (error.message || 'Unknown error'), 'error');
+                            } else {
+                                alert('Failed to save changes: ' + (error.message || 'Unknown error'));
+                            }
+                        } finally {
+                            if (saveButton) {
+                                saveButton.disabled = false;
+                                saveButton.innerHTML = '<i class="fas fa-save mr-2"></i>Save All';
+                            }
                         }
                     });
                 }
                 
-                console.log('Admin dashboard initialized successfully');
+                // Set up logout button
+                const logoutButton = document.getElementById('admin-logout');
+                if (logoutButton) {
+                    logoutButton.addEventListener('click', () => {
+                        // Clear admin auth
+                        sessionStorage.removeItem('kanva_admin_auth');
+                        // Redirect to main page
+                        window.location.href = 'index.html';
+                    });
+                }
+                
+                console.log('✅ Admin Dashboard initialized successfully');
                 
             } catch (error) {
-                console.error('Failed to initialize admin dashboard:', error);
+                console.error('❌ Failed to initialize admin dashboard:', error);
                 
-                // Show error message
-                if (loadingScreen) {
-                    loadingScreen.innerHTML = `
+                // Create user-friendly error message
+                let errorMessage = 'Failed to initialize admin dashboard. ';
+                
+                if (error.message.includes('AdminDashboard')) {
+                    errorMessage += 'The admin dashboard component could not be loaded. ';
+                    errorMessage += 'Please check the browser console for more details.';
+                } else {
+                    errorMessage += error.message || 'An unknown error occurred.';
+                }
+                
+                // Update loading element with error message
+                if (loadingElement) {
+                    loadingElement.innerHTML = `
                         <div class="text-center p-8">
-                            <div class="text-red-600 text-5xl mb-4">
-                                <i class="fas fa-exclamation-triangle"></i>
+                            <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+                            <h2 class="text-xl font-bold text-red-700 mb-2">Initialization Error</h2>
+                            <p class="text-red-600 mb-4">${errorMessage}</p>
+                            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4 text-left max-w-md mx-auto">
+                                <p class="text-sm font-medium text-gray-700 mb-1">Technical Details:</p>
+                                <code class="text-xs text-gray-600 break-words">${error.message || 'No error details available'}</code>
                             </div>
-                            <h2 class="text-2xl font-bold text-gray-800 mb-2">Error Loading Admin Dashboard</h2>
-                            <p class="text-gray-600 mb-6 max-w-md mx-auto">
-                                ${error.message || 'An unknown error occurred while loading the admin dashboard.'}
-                            </p>
-                            <div class="bg-gray-100 p-4 rounded-lg text-left max-w-md mx-auto mb-6 text-sm">
-                                <p class="font-semibold mb-1">Technical Details:</p>
-                                <code class="text-xs text-gray-700 break-all">${error.stack || 'No stack trace available'}</code>
-                            </div>
-                            <button onclick="window.location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
+                            <button onclick="window.location.reload()" 
+                                    class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors">
                                 <i class="fas fa-sync-alt mr-2"></i>Reload Page
                             </button>
                         </div>
                     `;
                 }
                 
-                // Also show a toast notification
-                if (window.AdminDashboard) {
-                    const tempDashboard = new window.AdminDashboard({});
-                    tempDashboard.showNotification(
-                        `Failed to initialize: ${error.message}`,
-                        'error'
-                    );
-                }
-                
                 return;
             } finally {
-                // Always hide loading screen, even if there was an error
-                if (loadingScreen) {
-                    loadingScreen.style.display = 'none';
+                // Always hide loading screen
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
                 }
             }
         });

@@ -62,10 +62,15 @@ class AdminManager {
             
             // Check for existing admin session
             this.isAdmin = await this.checkAdminStatus();
-            
-            // Initialize admin UI elements
-            this.initAdminUI();
-            
+
+            // Set up event listeners
+            this.setupEventListeners();
+
+            // Initialize admin UI if needed
+            if (this.isAdmin) {
+                await this.initAdminUI();
+            }
+
             // Show admin button if user is admin or in development
             if (this.isAdmin || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 this.showAdminButton();
@@ -75,15 +80,14 @@ class AdminManager {
                     await this.initAdminDashboard();
                 }
             }
-            
-            // Initialize event listeners
-            this.setupEventListeners();
-            
+
             this.isInitialized = true;
             console.log('AdminManager: Initialized successfully');
             return true;
         } catch (error) {
-            console.error('AdminManager: Initialization error:', error);
+            console.error('AdminManager: Initialization failed', error);
+            // Don't throw error to prevent blocking app initialization
+            // Instead, log the error and continue
             return false;
         }
     }
@@ -93,20 +97,29 @@ class AdminManager {
      */
     initAdminButton() {
         try {
-            console.log('Admin button initialized');
+            console.log('🔍 Initializing admin button - DOM ready state:', document.readyState);
             
             // Look for the existing header button first
             const adminToggle = document.getElementById('adminToggle');
+            console.log('🔍 Admin toggle button search result:', adminToggle ? 'Found' : 'Not found');
+            
             if (adminToggle) {
-                console.log('✅ Found admin toggle button in header');
+                console.log('✅ Found admin toggle button in header with ID:', adminToggle.id);
+                console.log('🔍 Current button properties:', {
+                    'visible': adminToggle.offsetParent !== null,
+                    'display': window.getComputedStyle(adminToggle).display,
+                    'hasClickHandler': adminToggle.onclick !== null
+                });
                 
                 // Remove any existing event listeners to prevent duplicates
                 adminToggle.removeEventListener('click', this.handleAdminButtonClick);
                 
-                // Add our click handler
-                adminToggle.addEventListener('click', this.handleAdminButtonClick.bind(this));
+                // Add our click handler with explicit binding
+                const boundHandler = this.handleAdminButtonClick.bind(this);
+                adminToggle.addEventListener('click', boundHandler);
                 
-                console.log('✅ Admin button click handler attached');
+                // Attach single click handler to avoid duplicate toggles
+                console.log('✅ Admin button click handler attached via addEventListener');
                 return;
             }
             
@@ -123,11 +136,17 @@ class AdminManager {
      * Handle admin button click - NEW METHOD
      */
     handleAdminButtonClick(e) {
-        console.log('🔐 Admin button clicked!');
+        console.log('🔐 Admin button clicked!', e.target);
+        console.log('AdminManager instance state:', {
+            isInitialized: this.isInitialized,
+            isAdmin: this.isAdmin,
+            adminDashboard: this.adminDashboard ? 'exists' : 'null'
+        });
         e.preventDefault();
         e.stopPropagation();
         
         try {
+            console.log('Attempting to toggle admin panel...');
             this.toggleAdminPanel();
         } catch (error) {
             console.error('❌ Error handling admin button click:', error);
@@ -191,7 +210,7 @@ class AdminManager {
     }
 
     /**
-     * Toggle the admin panel visibility - FIXED VERSION
+     * Toggle the admin panel visibility
      */
     async toggleAdminPanel() {
         console.log('🔄 Toggling admin panel...');
@@ -204,16 +223,15 @@ class AdminManager {
                 return;
             }
             
-            // Check if panel already exists
-            const existingPanel = document.getElementById('adminPanel');
-            if (existingPanel && existingPanel.style.display === 'block') {
-                console.log('🔽 Hiding admin panel');
-                this.hideAdminPanel();
-                return;
+            // Initialize dashboard if it doesn't exist
+            if (!this.adminDashboard) {
+                console.log('⚡ Initializing admin dashboard...');
+                await this.initAdminDashboard();
             }
             
-            console.log('🔼 Showing admin panel');
-            this.showAdminPanel();
+            // Open full admin dashboard directly when user clicks admin button and is authenticated
+            console.log('🚀 Opening full admin dashboard directly from toggle');
+            await this.openFullDashboard();
             
         } catch (error) {
             console.error('❌ Error toggling admin panel:', error);
@@ -521,16 +539,65 @@ class AdminManager {
         `;
         
         document.body.appendChild(adminPanel);
+        
+        // Set up event listeners for the admin panel buttons
+        this.setupAdminPanelListeners(adminPanel);
+        
         console.log('✅ Admin panel created and shown');
+    }
+    
+    /**
+     * Set up event listeners for admin panel buttons
+     */
+    setupAdminPanelListeners(panel) {
+        // Open Full Dashboard button
+        const openDashboardBtn = panel.querySelector('#openFullDashboard');
+        if (openDashboardBtn) {
+            openDashboardBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🚀 Open Full Dashboard button clicked');
+                this.openFullDashboard();
+            });
+        }
+        
+        // Close panel button
+        const closeBtn = panel.querySelector('#closeAdminPanel');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔴 Close admin panel button clicked');
+                this.hideAdminPanel();
+            });
+        }
+        
+        // Logout button
+        const logoutBtn = panel.querySelector('#adminLogoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🚪 Admin logout button clicked');
+                this.logout();
+            });
+        }
+        
+        console.log('✅ Admin panel event listeners set up');
     }
 
     /**
      * Hide admin panel
      */
     hideAdminPanel() {
+        // Important: Don't store/restore the dashboard here as it can cause issues
+        // with the toggle flow. The toggleAdminPanel method now handles this.
+        
         const panel = document.getElementById('adminPanel');
         if (panel) {
-            panel.remove();
+            // Remove any existing animation end listeners to prevent memory leaks
+            const newPanel = panel.cloneNode(true);
+            panel.parentNode.replaceChild(newPanel, panel);
+            newPanel.remove();
+            
+            console.log('✅ Admin panel hidden and removed from DOM');
         }
     }
 
@@ -596,15 +663,76 @@ class AdminManager {
      */
     async initAdminDashboard() {
         try {
-            if (typeof AdminDashboard !== 'undefined') {
-                this.adminDashboard = new AdminDashboard();
-                await this.adminDashboard.init();
-                console.log('Admin dashboard initialized successfully');
-            } else {
-                console.warn('AdminDashboard class not available');
+            // Check if AdminDashboard class is available
+            if (typeof AdminDashboard !== 'function') {
+                console.error('AdminDashboard class not available');
+                
+                // Try to dynamically load AdminDashboard if needed
+                if (typeof document !== 'undefined') {
+                    console.log('Attempting to load AdminDashboard script...');
+                    
+                    // Check if script is already in the document
+                    const existingScript = document.querySelector('script[src*="admin-dashboard.js"]');
+                    if (!existingScript) {
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = '/js/admin/admin-dashboard.js';
+                            script.onload = resolve;
+                            script.onerror = () => reject(new Error('Failed to load AdminDashboard script'));
+                            document.head.appendChild(script);
+                        });
+                        console.log('AdminDashboard script loaded');
+                    }
+                    
+                    // Wait a moment for script to initialize
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    // Check again if AdminDashboard is available
+                    if (typeof AdminDashboard !== 'function') {
+                        throw new Error('AdminDashboard class not found after loading attempt');
+                    }
+                } else {
+                    throw new Error('AdminDashboard class not found');
+                }
             }
+            
+            // Create a minimal calculator instance if not available
+            const calculator = this.calculator || window.calculator || {
+                dataManager: window.DataManager ? new DataManager() : {},
+                calculationEngine: window.CalculationEngine ? new CalculationEngine() : {},
+                getSettings: () => ({}),
+                updateSettings: () => {},
+                saveSettings: async () => {},
+                loadData: async () => {}
+            };
+            
+            this.adminDashboard = new AdminDashboard({
+                calculator: calculator,
+                adminManager: this
+            });
+            
+            await this.adminDashboard.init();
+            console.log('Admin dashboard initialized successfully');
+            return true;
         } catch (error) {
             console.error('Error initializing admin dashboard:', error);
+            
+            // Safe notification display that doesn't rely on this.showNotification
+            try {
+                if (typeof this.showNotification === 'function') {
+                    this.showNotification('Failed to initialize admin dashboard', 'error');
+                } else {
+                    console.warn('showNotification method not available');
+                    // Fallback to alert if in browser environment
+                    if (typeof alert === 'function') {
+                        alert('Failed to initialize admin dashboard: ' + error.message);
+                    }
+                }
+            } catch (notifyError) {
+                console.error('Error showing notification:', notifyError);
+            }
+            
+            return false;
         }
     }
 
@@ -639,6 +767,12 @@ class AdminManager {
      */
     logout() {
         console.log('🔐 Logging out admin user');
+        // Remove full dashboard modal if open
+        const fullModal = document.getElementById('adminModal');
+        if (fullModal) {
+            console.log('🔴 Removing full dashboard modal');
+            fullModal.remove();
+        }
         
         // Clear session
         sessionStorage.removeItem('kanva_admin_email');
@@ -654,24 +788,72 @@ class AdminManager {
     }
 
     /**
-     * Open full admin dashboard
+     * Open full admin dashboard in modal
      */
-    openFullDashboard() {
+    async openFullDashboard() {
         try {
-            console.log('🚀 Opening full dashboard...');
+            console.log('🚀 Opening full dashboard in modal...');
             
-            if (this.adminDashboard && typeof this.adminDashboard.show === 'function') {
-                this.hideAdminPanel();
-                this.adminDashboard.show();
-                console.log('✅ Full dashboard opened');
+            // Store the current adminDashboard instance before hiding the panel
+            const currentDashboard = this.adminDashboard;
+            
+            this.hideAdminPanel();
+            
+            // Restore the adminDashboard instance after hiding the panel
+            this.adminDashboard = currentDashboard;
+            
+            // Ensure calculator is ready before proceeding
+            await this.waitForCalculatorReady().catch(err => {
+                console.warn('Calculator not ready, continuing anyway:', err);
+            });
+            
+            // Ensure admin dashboard is initialized
+            if (!this.adminDashboard) {
+                console.log('⏳ Initializing admin dashboard...');
+                await this.initAdminDashboard();
             } else {
-                console.log('📄 Redirecting to admin.html...');
-                // Fallback to admin.html page
-                window.open('admin.html', '_blank');
+                console.log('✅ Using existing admin dashboard instance');
+                // Early break for Copper CRM environment
+                const isCopper = typeof window.Copper !== 'undefined';
+                console.log('🔍 Copper CRM environment detected:', isCopper);
+                if (isCopper) {
+                    console.log('💻 Copper CRM: opening custom modal');
+                    this.createAdminModal();
+                    return;
+                }
             }
+            
+            // Determine environment: prefer custom modal in Copper CRM environment
+                const inCopper = typeof window.Copper !== 'undefined';
+                console.log('🔍 Copper CRM environment detected:', inCopper);
+                if (!inCopper && typeof window.openAdminModal === 'function') {
+                    console.log('💻 Using global openAdminModal function');
+                    window.openAdminModal();
+                    console.log('✅ Full dashboard modal opened via global function');
+                } else if (this.adminDashboard && typeof this.adminDashboard.renderInContainer === 'function') {
+                    console.log('💻 Using fallback custom modal creation');
+                    this.createAdminModal();
+                    console.log('✅ Full dashboard opened in custom modal');
+                } else {
+                    console.error('Cannot open admin dashboard: Modal rendering not available');
+                    // Try to initialize admin dashboard one more time
+                    if (typeof AdminDashboard === 'function') {
+                        console.log('🔄 Attempting to reinitialize admin dashboard...');
+                        this.adminDashboard = new AdminDashboard({
+                            calculator: window.calculator || this.calculator,
+                            adminManager: this
+                        });
+                        await this.adminDashboard.init();
+                        this.createAdminModal();
+                        console.log('✅ Admin dashboard reinitialized and opened in modal');
+                    } else {
+                        alert('Admin dashboard modal functionality not available. Please check console for details.');
+                    }
+                }
+
         } catch (error) {
             console.error('AdminManager: Error opening full dashboard:', error);
-            alert('Error opening dashboard. Please check console for details.');
+            alert('Error opening dashboard: ' + error.message);
         }
     }
 
@@ -717,6 +899,127 @@ class AdminManager {
      */
     login() {
         this.showAdminLogin();
+    }
+
+    /**
+     * Create admin modal for dashboard
+     */
+    createAdminModal() {
+        try {
+            console.log('🏗️ Creating admin modal with dashboard state:', {
+                dashboardExists: !!this.adminDashboard,
+                hasRenderMethod: this.adminDashboard && typeof this.adminDashboard.renderInContainer === 'function'
+            });
+            
+            // Create modal container
+            const modal = document.createElement('div');
+            modal.id = 'adminModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow-y: auto;
+            `;
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.className = 'admin-modal-content';
+            modalContent.style.cssText = `
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                width: 90%;
+                max-width: 1200px;
+                max-height: 90vh;
+                overflow-y: auto;
+                position: relative;
+            `;
+            
+            // Add close button
+            const closeButton = document.createElement('button');
+            closeButton.innerHTML = '&times;';
+            closeButton.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                font-size: 24px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: #333;
+                z-index: 1;
+            `;
+            closeButton.addEventListener('click', () => {
+                console.log('🔴 Admin modal close button clicked');
+                // Store dashboard reference before removing modal
+                const currentDashboard = this.adminDashboard;
+                modal.remove();
+                // Restore dashboard reference
+                this.adminDashboard = currentDashboard;
+            });
+            
+            // Create dashboard container
+            const dashboardContainer = document.createElement('div');
+            dashboardContainer.id = 'adminDashboardContainer';
+            dashboardContainer.style.cssText = `
+                padding: 20px;
+                width: 100%;
+                height: 100%;
+            `;
+            
+            // Assemble modal
+            modalContent.appendChild(closeButton);
+            modalContent.appendChild(dashboardContainer);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Render dashboard in container
+            if (this.adminDashboard && typeof this.adminDashboard.renderInContainer === 'function') {
+                console.log('🎨 Rendering admin dashboard in container');
+                this.adminDashboard.renderInContainer(dashboardContainer);
+                console.log('✅ Admin dashboard rendered successfully');
+                // Attach logout listener inside full dashboard modal
+                const logoutBtnInModal = dashboardContainer.querySelector('#adminLogout');
+                if (logoutBtnInModal) {
+                    logoutBtnInModal.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        console.log('🚪 Full dashboard logout button clicked');
+                        this.logout();
+                    });
+                }
+            } else {
+                console.error('❌ Admin dashboard not available or renderInContainer method missing', {
+                    dashboardExists: !!this.adminDashboard,
+                    dashboardMethods: this.adminDashboard ? Object.keys(this.adminDashboard) : 'N/A'
+                });
+                dashboardContainer.innerHTML = '<div style="padding: 40px; text-align: center;">Error: Admin dashboard not available</div>';
+            }
+            
+            // Close on outside click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    console.log('🔴 Admin modal outside click detected');
+                    // Store dashboard reference before removing modal
+                    const currentDashboard = this.adminDashboard;
+                    modal.remove();
+                    // Restore dashboard reference
+                    this.adminDashboard = currentDashboard;
+                }
+            });
+            
+            console.log('✅ Admin modal created and displayed');
+            return modal;
+        } catch (error) {
+            console.error('❌ Error creating admin modal:', error);
+            return null;
+        }
     }
 }
 

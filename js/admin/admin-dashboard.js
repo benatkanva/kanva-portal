@@ -16,12 +16,22 @@
          * @param {AdminManager} options.adminManager - The admin manager instance
          */
         constructor({ calculator, adminManager } = {}) {
-            if (!calculator) {
-                console.error('AdminDashboard: Calculator instance is required');
-                throw new Error('Calculator instance is required');
-            }
-
-            this.calculator = calculator;
+            // Create a minimal calculator instance if not provided
+            this.calculator = calculator || {
+                dataManager: window.DataManager ? new DataManager() : {
+                    getData: () => ({}),
+                    saveData: async () => {}
+                },
+                calculationEngine: window.CalculationEngine ? new CalculationEngine() : {
+                    calculate: () => ({})
+                },
+                getSettings: () => ({}),
+                updateSettings: () => {},
+                saveSettings: async () => {},
+                loadData: async () => {}
+            };
+            
+            console.log('AdminDashboard: Initialized with', this.calculator ? 'calculator' : 'minimal implementation');
             this.adminManager = adminManager;
             
             // Bind methods to prevent context loss
@@ -32,7 +42,9 @@
             this.switchTab = this.switchTab.bind(this);
             this.loadTabContent = this.loadTabContent.bind(this);
             this.saveChanges = this.saveChanges.bind(this);
+            this.showNotification = this.showNotification.bind(this);
             this.handleDashboardClick = this.handleDashboardClick.bind(this);
+            this.renderInContainer = this.renderInContainer.bind(this);
             
             // State
             this.isInitialized = false;
@@ -45,6 +57,38 @@
             this.tiers = [];
             this.shipping = { zones: [] };
             this.savedGitConfig = null;
+            
+            // Form state
+            this.currentProduct = null;
+            this.isEditing = false;
+            
+            // Default product structure
+            this.defaultProduct = {
+                id: '',
+                name: '',
+                price: 0,
+                msrp: 0,
+                unitsPerCase: 0,
+                displayBoxesPerCase: 0,
+                unitsPerDisplayBox: 0,
+                description: '',
+                category: '',
+                isBestSeller: false,
+                image: '',
+                active: true,
+                masterCaseDimensions: {
+                    length: 0,
+                    width: 0,
+                    height: 0,
+                    weight: 0
+                },
+                displayBoxDimensions: {
+                    length: 0,
+                    width: 0,
+                    height: 0,
+                    weight: 0
+                }
+            };
         }
         
         /**
@@ -52,30 +96,82 @@
          */
         async init() {
             if (this.isInitialized) {
-                console.warn('AdminDashboard already initialized');
+                console.log('✅ AdminDashboard already initialized');
                 return true;
             }
-
-            console.log('Initializing AdminDashboard...');
-
+            
+            console.log('⚙️ Initializing AdminDashboard...');
+            
             try {
                 // Create the dashboard UI
                 this.createUI();
                 
+                // Load initial data
+                await this.loadProducts();
+                
                 // Set up event listeners
                 this.setupEventListeners();
                 
-                // Load initial data
-                await this.loadData();
+                // Initialize Copper CRM integration if available
+                this.initializeCopperIntegration();
                 
                 // Load saved credentials
                 this.loadSavedCredentials();
+                
+                // Initialize the default tab
+                this.switchTab('products');
+                
+                // Set up global event delegation for dynamic elements
+                document.addEventListener('click', (e) => {
+                    // Handle edit product button
+                    const editBtn = e.target.closest('.edit-product');
+                    if (editBtn) {
+                        e.preventDefault();
+                        const productId = editBtn.dataset.id;
+                        this.showProductForm(productId);
+                        return;
+                    }
+                    
+                    // Handle delete product button
+                    const deleteBtn = e.target.closest('.delete-product');
+                    if (deleteBtn) {
+                        e.preventDefault();
+                        const productId = deleteBtn.dataset.id;
+                        if (confirm('Are you sure you want to delete this product?')) {
+                            this.deleteProduct(productId);
+                        }
+                        return;
+                    }
+                    
+                    // Handle add product button
+                    if (e.target.matches('#addProductBtn') || e.target.closest('#addProductBtn')) {
+                        e.preventDefault();
+                        this.showProductForm();
+                        return;
+                    }
+                    
+                    // Handle cancel button in product form
+                    if (e.target.matches('#cancelProductBtn') || e.target.closest('#cancelProductBtn')) {
+                        e.preventDefault();
+                        this.loadTabContent('products');
+                        return;
+                    }
+                });
+                
+                // Handle form submissions
+                document.addEventListener('submit', (e) => {
+                    if (e.target.matches('#productForm')) {
+                        e.preventDefault();
+                        this.handleProductFormSubmit(e.target);
+                    }
+                });
                 
                 this.isInitialized = true;
                 console.log('AdminDashboard initialized successfully');
                 return true;
             } catch (error) {
                 console.error('Failed to initialize AdminDashboard:', error);
+                this.showNotification('Failed to initialize admin dashboard', 'error');
                 throw error;
             }
         }
@@ -169,7 +265,63 @@
                 }
             });
             
-            console.log('Event listeners set up successfully');
+            // Tab switching
+            document.addEventListener('click', (e) => {
+                const tabBtn = e.target.closest('.admin-tab');
+                if (tabBtn) {
+                    const tabId = tabBtn.dataset.tab;
+                    this.switchTab(tabId);
+                }
+            });
+            
+            // Save changes button
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('#saveAdminChanges')) {
+                    this.saveChanges();
+                }
+            });
+            
+            // Add product button
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('#addProductBtn')) {
+                    this.showProductForm();
+                }
+            });
+            
+            // Edit product button
+            document.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-product');
+                if (editBtn) {
+                    const productId = editBtn.dataset.id;
+                    this.editProduct(productId);
+                }
+            });
+            
+            // Delete product button
+            document.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-product');
+                if (deleteBtn) {
+                    const productId = deleteBtn.dataset.id;
+                    if (confirm('Are you sure you want to delete this product?')) {
+                        this.deleteProduct(productId);
+                    }
+                }
+            });
+            
+            // Product form submission
+            document.addEventListener('submit', (e) => {
+                if (e.target.matches('#productForm')) {
+                    e.preventDefault();
+                    this.handleProductFormSubmit(e.target);
+                }
+            });
+            
+            // Cancel button in product form
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('#cancelProductBtn')) {
+                    this.loadTabContent('products');
+                }
+            });
         }
         
         /**
@@ -269,53 +421,52 @@
          * @param {string} tabId - The ID of the tab to load content for
          */
         loadTabContent(tabId) {
-            const contentEl = this.dashboard.querySelector('#adminTabContent');
-            if (!contentEl) {
-                console.error('Tab content element not found');
-                return;
-            }
+            if (!this.dashboard) return;
             
-            console.log(`Loading content for tab: ${tabId}`);
+            const tabContent = this.dashboard.querySelector('.admin-tab-content');
+            if (!tabContent) return;
             
-            // Show loading state
-            contentEl.innerHTML = `
-                <div class="loading-state">
-                    <div class="spinner"></div>
-                    <p>Loading ${tabId}...</p>
-                </div>
-            `;
+            // Update active tab
+            const tabs = this.dashboard.querySelectorAll('.admin-tab');
+            tabs.forEach(tab => {
+                if (tab.dataset.tab === tabId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
             
-            // Render content based on tab
-            let content = '';
+            this.currentTab = tabId;
+            
+            // Render tab content
+            let html = '';
             
             switch (tabId) {
                 case 'products':
-                    content = this.renderProductsTab();
+                    html = this.renderProductsTab();
                     break;
                 case 'tiers':
-                    content = this.renderTiersTab();
+                    html = this.renderTiersTab();
                     break;
                 case 'shipping':
-                    content = this.renderShippingTab();
+                    html = this.renderShippingTab();
                     break;
                 case 'integrations':
-                    content = this.renderIntegrationsTab();
+                    html = this.renderIntegrationsTab();
                     break;
                 case 'settings':
-                    content = this.renderSettingsTab();
+                    html = this.renderSettingsTab();
                     break;
                 default:
-                    content = '<div class="text-center py-8"><p>Tab content not found</p></div>';
+                    html = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Tab content not found</p></div>';
             }
             
-            // Update content
-            contentEl.innerHTML = content;
+            tabContent.innerHTML = html;
             
-            // Apply saved credentials if on integrations tab
+            // Apply saved credentials to form fields
             if (tabId === 'integrations') {
-                setTimeout(() => {
-                    this.applySavedCredentials();
-                }, 100);
+                this.applySavedCredentials();
+                this.initializeCopperIntegration();
             }
         }
         
@@ -323,7 +474,7 @@
          * Render the Products tab content
          */
         renderProductsTab() {
-            return `
+            let html = `
                 <div class="admin-section">
                     <div class="section-header">
                         <h4><i class="fas fa-box"></i> Product Catalog</h4>
@@ -331,34 +482,95 @@
                             <i class="fas fa-plus"></i> Add Product
                         </button>
                     </div>
-                    
-                    <div class="products-grid">
-                        ${this.products.length > 0 ? this.products.map(product => `
-                            <div class="product-card" data-product-id="${product.id}">
-                                <div class="product-header">
-                                    <h5>${product.name || 'Unnamed Product'}</h5>
-                                    <span class="product-status ${product.active ? 'active' : 'inactive'}">
-                                        ${product.active ? 'Active' : 'Inactive'}
-                                    </span>
-                                </div>
-                                <div class="product-details">
-                                    <p><strong>Category:</strong> ${product.category || 'N/A'}</p>
-                                    <p><strong>Base Price:</strong> $${(product.basePrice || 0).toFixed(2)}</p>
-                                    <p><strong>MSRP:</strong> $${(product.msrp || 0).toFixed(2)}</p>
-                                </div>
-                                <div class="product-actions">
-                                    <button class="btn btn-sm btn-outline-primary edit-product" data-id="${product.id}">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-product" data-id="${product.id}">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>MSRP</th>
+                                    <th>Units/Case</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            if (this.products.length === 0) {
+                html += `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                                <h5>No products found</h5>
+                                <p class="text-muted">Get started by adding your first product</p>
+                                <button class="btn btn-primary" id="addFirstProductBtn">
+                                    <i class="fas fa-plus"></i> Add Your First Product
+                                </button>
                             </div>
-                        `).join('') : '<div class="empty-state"><i class="fas fa-box-open"></i><p>No products found</p></div>'}
+                        </td>
+                    </tr>
+                `;
+            } else {
+                this.products.forEach(product => {
+                    const statusBadge = product.active 
+                        ? '<span class="badge badge-success">Active</span>' 
+                        : '<span class="badge badge-secondary">Inactive</span>';
+                        
+                    const bestSellerBadge = product.isBestSeller 
+                        ? ' <span class="badge badge-warning"><i class="fas fa-star"></i> Best Seller</span>' 
+                        : '';
+                    
+                    html += `
+                        <tr data-product-id="${product.id}" class="${!product.active ? 'table-secondary' : ''}">
+                            <td>${statusBadge}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="product-thumb" style="background-image: url('${product.image || 'https://via.placeholder.com/50'}')"></div>
+                                    <div class="ml-2">
+                                        <div class="font-weight-bold">${product.name || 'Unnamed Product'}</div>
+                                        <small class="text-muted">${product.id}</small>
+                                        ${bestSellerBadge}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${product.category || '-'}</td>
+                            <td>$${product.price ? product.price.toFixed(2) : '0.00'}</td>
+                            <td>${product.msrp ? '$' + product.msrp.toFixed(2) : '-'}</td>
+                            <td>${product.unitsPerCase || '-'}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary edit-product" data-id="${product.id}" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger delete-product" data-id="${product.id}" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted">
+                            Showing ${this.products.length} product${this.products.length !== 1 ? 's' : ''}
+                        </div>
+                        <button class="btn btn-outline-primary" id="exportProductsBtn">
+                            <i class="fas fa-file-export"></i> Export CSV
+                        </button>
                     </div>
                 </div>
             `;
+            
+            return html;
         }
         
         /**
@@ -447,10 +659,172 @@
         }
         
         /**
+         * Initialize Copper CRM integration
+         */
+        initializeCopperIntegration() {
+            try {
+                // Check if Copper integration is available
+                if (window.CopperIntegration && typeof window.CopperIntegration.initialize === 'function') {
+                    console.log('🔄 Initializing Copper CRM integration from AdminDashboard...');
+                    
+                    // Initialize Copper integration
+                    const isInCopperEnv = window.CopperIntegration.initialize();
+                    
+                    console.log(`✅ Copper CRM integration ${isInCopperEnv ? 'initialized in Copper environment' : 'initialized in standalone mode'}`);
+                    return true;
+                } else {
+                    console.warn('⚠️ Copper CRM integration not available');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Error initializing Copper CRM integration:', error);
+                return false;
+            }
+        }
+        
+        /**
+         * Load saved credentials for integrations
+         */
+        loadSavedCredentials() {
+            try {
+                // Load GitHub credentials
+                const savedGitConfig = localStorage.getItem('gitConfig');
+                if (savedGitConfig) {
+                    try {
+                        this.savedGitConfig = JSON.parse(savedGitConfig);
+                        console.log('✅ GitHub credentials loaded');
+                    } catch (e) {
+                        console.warn('⚠️ Error parsing saved GitHub config:', e);
+                    }
+                }
+                
+                // Load Copper credentials
+                const copperApiKey = localStorage.getItem('copperApiKey');
+                const copperUserEmail = localStorage.getItem('copperUserEmail');
+                
+                if (copperApiKey && copperUserEmail) {
+                    console.log('✅ Copper CRM credentials loaded');
+                    
+                    // Apply to form fields when tab is loaded
+                    this.savedCopperConfig = {
+                        apiKey: copperApiKey,
+                        userEmail: copperUserEmail
+                    };
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ Error loading saved credentials:', error);
+                return false;
+            }
+        }
+        
+        /**
+         * Initialize Copper CRM integration
+         */
+        initializeCopperIntegration() {
+            try {
+                // Check for existing credentials
+                const apiKey = localStorage.getItem('copperApiKey');
+                const userEmail = localStorage.getItem('copperUserEmail');
+                
+                if (!apiKey || !userEmail) {
+                    console.log('⚠️ No Copper CRM credentials found');
+                    this.updateCopperStatusIndicator(false);
+                    return false;
+                }
+                
+                // Configure Copper SDK if available
+                if (window.CopperIntegration && typeof window.CopperIntegration.configureSdk === 'function') {
+                    const credentials = { apiKey, userEmail };
+                    
+                    // Attempt to configure SDK with saved credentials
+                    window.CopperIntegration.configureSdk(credentials)
+                        .then(result => {
+                            if (result) {
+                                console.log('✅ Copper SDK configured successfully from admin panel');
+                                this.updateCopperStatusIndicator(true);
+                            } else {
+                                console.warn('⚠️ Copper SDK configuration failed');
+                                this.updateCopperStatusIndicator(false);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Error configuring Copper SDK:', error);
+                            this.updateCopperStatusIndicator(false);
+                        });
+                } else {
+                    console.warn('⚠️ Copper Integration module not available');
+                    this.updateCopperStatusIndicator(false);
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ Error initializing Copper integration:', error);
+                this.updateCopperStatusIndicator(false);
+                return false;
+            }
+        }
+        
+        /**
+         * Apply saved credentials to form fields
+         */
+        applySavedCredentials() {
+            try {
+                // Apply GitHub credentials
+                if (this.savedGitConfig) {
+                    const repoField = document.getElementById('githubRepo');
+                    const branchField = document.getElementById('githubBranch');
+                    const tokenField = document.getElementById('githubToken');
+                    
+                    if (repoField && this.savedGitConfig.repo) {
+                        repoField.value = this.savedGitConfig.repo;
+                    }
+                    
+                    if (branchField && this.savedGitConfig.branch) {
+                        branchField.value = this.savedGitConfig.branch;
+                    }
+                    
+                    if (tokenField && this.savedGitConfig.token) {
+                        tokenField.value = this.savedGitConfig.token;
+                    }
+                }
+                
+                // Apply Copper credentials
+                if (this.savedCopperConfig) {
+                    const apiKeyField = document.getElementById('copperApiKey');
+                    const userEmailField = document.getElementById('copperUserEmail');
+                    
+                    if (apiKeyField && this.savedCopperConfig.apiKey) {
+                        apiKeyField.value = this.savedCopperConfig.apiKey;
+                    }
+                    
+                    if (userEmailField && this.savedCopperConfig.userEmail) {
+                        userEmailField.value = this.savedCopperConfig.userEmail;
+                    }
+                    
+                    // Update connection status indicator
+                    const statusIndicator = document.querySelector('.integration-card:nth-child(2) .connection-status');
+                    if (statusIndicator) {
+                        statusIndicator.classList.remove('disconnected');
+                        statusIndicator.classList.add('connected');
+                        statusIndicator.innerHTML = '<i class="fas fa-check-circle"></i> Connected';
+                    }
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ Error applying saved credentials:', error);
+                return false;
+            }
+        }
+        
+        /**
          * Render the Integrations tab content
          */
         renderIntegrationsTab() {
-            const hasGitIntegration = this.savedGitConfig?.token;
+            const hasGitIntegration = this.savedGitConfig?.token || false;
+            const hasCopperIntegration = this.savedCopperConfig?.apiKey || false;
             
             return `
                 <div class="admin-section">
@@ -511,14 +885,15 @@
                     </div>
                     
                     <!-- Copper CRM Integration -->
-                    <div class="integration-card">
+                    <div class="integration-card copper-settings-container">
                         <div class="integration-header">
                             <div class="integration-title">
                                 <i class="fas fa-address-book"></i>
                                 <h5>Copper CRM Integration</h5>
                             </div>
-                            <span class="connection-status disconnected">
-                                <i class="fas fa-times-circle"></i> Not Connected
+                            <span class="connection-status ${hasCopperIntegration ? 'connected' : 'disconnected'}" id="copperConnectionStatus">
+                                <i class="fas ${hasCopperIntegration ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                ${hasCopperIntegration ? 'Connected' : 'Not Connected'}
                             </span>
                         </div>
                         <p>Sync customer data and save quotes directly to your CRM.</p>
@@ -620,40 +995,75 @@
         }
         
         /**
-         * Load data from various sources (GitHub, localStorage, defaults)
+         * Load product data from the calculator's data manager or fall back to local file
          */
-        async loadData() {
+        async loadProducts() {
+            console.log('Loading products...');
+            
             try {
-                console.log('Loading admin data...');
-                
-                // Try to load from GitHub first if configured
-                if (this.savedGitConfig?.token) {
-                    try {
-                        const [products, tiers, shipping] = await Promise.all([
-                            this.fetchFromGitHub('data/products.json'),
-                            this.fetchFromGitHub('data/tiers.json'),
-                            this.fetchFromGitHub('data/shipping.json')
-                        ]);
-                        
-                        this.products = products || [];
-                        this.tiers = tiers || [];
-                        this.shipping = shipping || { zones: [] };
-                        
-                        this.showNotification('Data loaded from GitHub', 'success');
+                // Try to load from calculator's data manager first
+                if (this.calculator?.dataManager?.getData) {
+                    const data = this.calculator.dataManager.getData();
+                    if (data?.products) {
+                        this.products = Array.isArray(data.products) ? data.products : [];
+                        console.log(`Loaded ${this.products.length} products from calculator data manager`);
                         return;
-                    } catch (gitError) {
-                        console.warn('Failed to load from GitHub, trying local fallback:', gitError);
                     }
                 }
                 
-                // Fallback to default data
+                // Fall back to local file
+                try {
+                    const response = await fetch('/data/products.json');
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.products = Array.isArray(data) ? data : [];
+                        console.log(`Loaded ${this.products.length} products from local file`);
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('Failed to load products from local file:', error);
+                }
+                
+                // If all else fails, initialize with empty array
+                this.products = [];
+                console.log('No products found, initialized with empty array');
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                this.products = [];
+                throw error; // Re-throw to be caught by the caller
+            }
+        }
+        
+        /**
+         * Load data from various sources (GitHub, localStorage, defaults)
+         */
+        async loadData() {
+            console.log('Loading admin data...');
+            
+            try {
+                // Load products
+                await this.loadProducts();
+                
+                // Load other data (tiers, shipping, etc.)
+                if (this.calculator?.dataManager?.getData) {
+                    const data = this.calculator.dataManager.getData();
+                    if (data) {
+                        this.tiers = Array.isArray(data.tiers) ? data.tiers : [];
+                        this.shipping = typeof data.shipping === 'object' ? data.shipping : { zones: [] };
+                        console.log('Data loaded from calculator data manager');
+                        return;
+                    }
+                }
+                
+                // Fall back to default data
                 this.loadDefaultData();
-                this.showNotification('Using default data', 'info');
+                console.log('Using default data');
                 
             } catch (error) {
                 console.error('Error loading data:', error);
                 this.loadDefaultData();
-                this.showNotification('Error loading data, using defaults', 'warning');
+                throw error; // Re-throw to be caught by the caller
             }
         }
         
@@ -944,12 +1354,58 @@
                 localStorage.setItem('copperApiKey', apiKey);
                 localStorage.setItem('copperUserEmail', userEmail);
                 
+                // Update Copper integration if available
+                if (window.CopperIntegration && typeof window.CopperIntegration.configureSdk === 'function') {
+                    try {
+                        const credentials = { apiKey, userEmail };
+                        const configResult = await window.CopperIntegration.configureSdk(credentials);
+                        
+                        if (configResult) {
+                            console.log('✅ Copper SDK reconfigured with new credentials from admin panel');
+                            this.updateCopperStatusIndicator(true);
+                        } else {
+                            console.warn('⚠️ Copper SDK reconfiguration attempted but may not have succeeded');
+                            this.updateCopperStatusIndicator(false);
+                        }
+                    } catch (e) {
+                        console.error('❌ Could not reconfigure Copper CRM integration:', e);
+                        this.updateCopperStatusIndicator(false);
+                    }
+                }
+                
                 this.showNotification('Copper CRM settings saved successfully', 'success');
                 return true;
                 
             } catch (error) {
                 this.showNotification(`Error saving Copper settings: ${error.message}`, 'error');
                 return false;
+            }
+        }
+        
+        /**
+         * Update Copper CRM status indicator in the admin panel
+         * @param {boolean} isConnected - Whether the connection is successful
+         */
+        updateCopperStatusIndicator(isConnected) {
+            const statusIndicator = document.getElementById('copperConnectionStatus');
+            if (!statusIndicator) {
+                // Create status indicator if it doesn't exist
+                const container = document.querySelector('.copper-settings-container');
+                if (container) {
+                    const indicator = document.createElement('div');
+                    indicator.id = 'copperConnectionStatus';
+                    indicator.className = isConnected ? 'connection-status connected' : 'connection-status disconnected';
+                    indicator.innerHTML = isConnected ? 
+                        '<i class="fas fa-plug"></i> Connected to Copper CRM' : 
+                        '<i class="fas fa-exclamation-triangle"></i> Not connected to Copper CRM';
+                    container.prepend(indicator);
+                }
+            } else {
+                // Update existing indicator
+                statusIndicator.className = isConnected ? 'connection-status connected' : 'connection-status disconnected';
+                statusIndicator.innerHTML = isConnected ? 
+                    '<i class="fas fa-plug"></i> Connected to Copper CRM' : 
+                    '<i class="fas fa-exclamation-triangle"></i> Not connected to Copper CRM';
             }
         }
         
@@ -977,6 +1433,26 @@
         /**
          * Save all changes
          */
+                /**
+         * Display a toast notification using NotificationManager
+         * @param {string} message - The message to display
+         * @param {string} type - Notification type: 'success', 'error', 'warning', 'info'
+         */
+        showNotification(message, type = 'info') {
+            if (window.NotificationManager) {
+                const methodMap = {
+                    'success': 'showSuccess',
+                    'error': 'showError',
+                    'warning': 'showWarning',
+                    'info': 'showInfo'
+                };
+                const method = methodMap[type] || 'showInfo';
+                window.NotificationManager[method](message);
+            } else {
+                console.log(`${type.toUpperCase()}: ${message}`);
+            }
+        }
+
         async saveChanges() {
             try {
                 const saveBtn = document.getElementById('saveAdminChanges');
@@ -1049,73 +1525,191 @@
          */
         async resetAppData() {
             try {
-                // Clear localStorage
-                const keys = Object.keys(localStorage).filter(key => 
-                    key.startsWith('kanva') || key.startsWith('git') || key.startsWith('copper')
-                );
-                keys.forEach(key => localStorage.removeItem(key));
+                localStorage.removeItem('kanvaSettings');
+                localStorage.removeItem('gitConfig');
+                localStorage.removeItem('copperApiKey');
+                localStorage.removeItem('copperUserEmail');
                 
-                // Reset data to defaults
-                this.loadDefaultData();
+                this.products = [];
+                this.tiers = [];
+                this.shipping = { zones: [] };
                 this.savedGitConfig = null;
                 
-                // Refresh current tab
-                this.loadTabContent(this.currentTab);
-                
-                this.showNotification('All data reset to defaults', 'success');
+                this.showNotification('App data reset to defaults', 'success');
                 
             } catch (error) {
-                console.error('Error resetting data:', error);
-                this.showNotification(`Error resetting data: ${error.message}`, 'error');
+                console.error('Error resetting app data:', error);
+                this.showNotification('Failed to reset app data', 'error');
             }
         }
         
         /**
-         * Show notification to user
+         * Shows the product form for adding or editing a product
+         * @param {string} productId - The ID of the product to edit, or null for a new product
          */
-        showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.innerHTML = `
-                <div class="notification-content">
-                    <i class="fas ${this.getNotificationIcon(type)}"></i>
-                    <span>${message}</span>
+        showProductForm(productId = null) {
+            this.isEditing = !!productId;
+            this.currentProduct = productId ? this.products.find(p => p.id === productId) || { ...this.defaultProduct }
+                : { ...this.defaultProduct, id: `prod_${Date.now()}` };
+            
+            const formHtml = `
+                <div class="admin-form-container">
+                    <h3>${this.isEditing ? 'Edit' : 'Add New'} Product</h3>
+                    <form id="productForm" class="admin-form">
+                        <input type="hidden" name="id" value="${this.currentProduct.id}">
+                        
+                        <div class="form-group">
+                            <label for="name">Product Name *</label>
+                            <input type="text" id="name" name="name" value="${this.currentProduct.name || ''}" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="price">Price *</label>
+                                <input type="number" id="price" name="price" step="0.01" min="0" 
+                                       value="${this.currentProduct.price || ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="msrp">MSRP</label>
+                                <input type="number" id="msrp" name="msrp" step="0.01" min="0"
+                                       value="${this.currentProduct.msrp || ''}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="unitsPerCase">Units per Case</label>
+                                <input type="number" id="unitsPerCase" name="unitsPerCase" min="1"
+                                       value="${this.currentProduct.unitsPerCase || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label for="unitsPerDisplayBox">Units per Display Box</label>
+                                <input type="number" id="unitsPerDisplayBox" name="unitsPerDisplayBox" min="1"
+                                       value="${this.currentProduct.unitsPerDisplayBox || ''}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" id="category" name="category" 
+                                   value="${this.currentProduct.category || ''}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="3">${this.currentProduct.description || ''}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="image">Image URL</label>
+                            <input type="url" id="image" name="image" value="${this.currentProduct.image || ''}">
+                        </div>
+                        
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="isBestSeller" name="isBestSeller" 
+                                   ${this.currentProduct.isBestSeller ? 'checked' : ''}>
+                            <label for="isBestSeller">Mark as Best Seller</label>
+                        </div>
+                        
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="active" name="active" 
+                                   ${this.currentProduct.active !== false ? 'checked' : ''}>
+                            <label for="active">Active</label>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                ${this.isEditing ? 'Update' : 'Add'} Product
+                            </button>
+                            <button type="button" id="cancelProductBtn" class="btn btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <button class="notification-close">&times;</button>
             `;
             
-            // Add to DOM
-            document.body.appendChild(notification);
-            
-            // Auto-remove after delay
-            setTimeout(() => {
-                notification.classList.add('fade-out');
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
-            
-            // Close button handler
-            const closeBtn = notification.querySelector('.notification-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => notification.remove());
+            // Set the tab content
+            const tabContent = document.querySelector('#adminDashboard .tab-content');
+            if (tabContent) {
+                tabContent.innerHTML = formHtml;
+                tabContent.scrollIntoView({ behavior: 'smooth' });
             }
         }
         
         /**
-         * Get notification icon class
+         * Handles the product form submission
+         * @param {HTMLFormElement} form - The form element
          */
-        getNotificationIcon(type) {
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                warning: 'fa-exclamation-triangle',
-                info: 'fa-info-circle'
-            };
-            return icons[type] || 'fa-info-circle';
+        async handleProductFormSubmit(form) {
+            try {
+                const formData = new FormData(form);
+                const productData = {
+                    id: formData.get('id'),
+                    name: formData.get('name'),
+                    price: parseFloat(formData.get('price')) || 0,
+                    msrp: parseFloat(formData.get('msrp')) || 0,
+                    unitsPerCase: parseInt(formData.get('unitsPerCase')) || 0,
+                    unitsPerDisplayBox: parseInt(formData.get('unitsPerDisplayBox')) || 0,
+                    category: formData.get('category') || '',
+                    description: formData.get('description') || '',
+                    image: formData.get('image') || '',
+                    isBestSeller: formData.get('isBestSeller') === 'on',
+                    active: formData.get('active') !== 'false',
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                // Validate required fields
+                if (!productData.name || isNaN(productData.price)) {
+                    this.showNotification('Please fill in all required fields', 'error');
+                    return;
+                }
+                
+                // Update or add the product
+                if (this.isEditing) {
+                    const index = this.products.findIndex(p => p.id === productData.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...productData };
+                        this.showNotification('Product updated successfully', 'success');
+                    }
+                } else {
+                    this.products.push(productData);
+                    this.showNotification('Product added successfully', 'success');
+                }
+                
+                // Save the updated products
+                await this.saveProducts();
+                
+                // Return to products list
+                this.loadTabContent('products');
+                
+            } catch (error) {
+                console.error('Error saving product:', error);
+                this.showNotification('Failed to save product', 'error');
+            }
         }
         
         /**
-         * Show the admin dashboard
+         * Deletes a product
+         * @param {string} productId - The ID of the product to delete
+         */
+        async deleteProduct(productId) {
+            try {
+                const index = this.products.findIndex(p => p.id === productId);
+                if (index !== -1) {
+                    this.products.splice(index, 1);
+                    await this.saveProducts();
+                    this.showNotification('Product deleted successfully', 'success');
+                    this.loadTabContent('products');
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                this.showNotification('Failed to delete product', 'error');
+            }
+        }
+        
+        /**
+         * Shows the admin dashboard
          */
         show() {
             if (!this.isInitialized) {
@@ -1124,10 +1718,7 @@
                 return;
             }
             
-            if (!this.dashboard) {
-                console.error('Dashboard element not found');
-                return;
-            }
+            if (!this.dashboard) return;
             
             // Add visible class for smooth transition
             this.dashboard.classList.add('visible');
@@ -1164,17 +1755,111 @@
                 this.show();
             }
         }
+        
+        /**
+         * Render the admin dashboard in a specified container
+         * @param {HTMLElement} container - The container element to render the dashboard in
+         */
+        renderInContainer(container) {
+            try {
+                if (!container) {
+                    throw new Error('No container provided for admin dashboard');
+                }
+                
+                console.log('📋 Rendering admin dashboard in container...');
+                
+                // Store reference to the container
+                this.dashboard = container;
+                
+                // Create the dashboard structure
+                container.innerHTML = `
+                    <div class="admin-header">
+                        <h2>Admin Dashboard</h2>
+                        <div class="admin-tabs">
+                            <button class="admin-tab ${this.currentTab === 'dashboard' ? 'active' : ''}" data-tab="dashboard">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </button>
+                            <button class="admin-tab ${this.currentTab === 'products' ? 'active' : ''}" data-tab="products">
+                                <i class="fas fa-box"></i> Products
+                            </button>
+                            <button class="admin-tab ${this.currentTab === 'github' ? 'active' : ''}" data-tab="github">
+                                <i class="fab fa-github"></i> GitHub
+                            </button>
+                            <button class="admin-tab ${this.currentTab === 'copper' ? 'active' : ''}" data-tab="copper">
+                                <i class="fas fa-address-book"></i> Copper CRM
+                            </button>
+                            <button class="admin-tab ${this.currentTab === 'settings' ? 'active' : ''}" data-tab="settings">
+                                <i class="fas fa-cog"></i> Settings
+                            </button>
+                        </div>
+                    </div>
+                    <div class="admin-content">
+                        <div id="admin-tab-content" class="tab-content"></div>
+                    </div>
+                    <div class="admin-footer">
+                        <button id="saveAdminChanges" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button id="adminLogout" class="btn btn-outline-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                `;
+                
+                // Add event listeners
+                this.addEventListeners(container);
+                
+                // Load the current tab content
+                this.loadTabContent(this.currentTab);
+                
+                // Set visibility state
+                this.isVisible = true;
+                
+                console.log('✅ Admin dashboard rendered in container');
+            } catch (error) {
+                console.error('❌ Error rendering admin dashboard in container:', error);
+                throw error;
+            }
+        }
+        
+        /**
+         * Add event listeners to the dashboard elements
+         * @param {HTMLElement} container - The dashboard container
+         */
+        addEventListeners(container) {
+            // Tab switching
+            const tabs = container.querySelectorAll('.admin-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    const tabName = e.currentTarget.dataset.tab;
+                    this.switchTab(tabName);
+                });
+            });
+            
+            // Save button
+            const saveBtn = container.querySelector('#saveAdminChanges');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', this.saveChanges);
+            }
+            
+            // Logout button
+            const logoutBtn = container.querySelector('#adminLogout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    this.hide();
+                    if (this.adminManager && typeof this.adminManager.logout === 'function') {
+                        this.adminManager.logout();
+                    }
+                });
+            }
+            
+            // Dashboard click handler for delegated events
+            container.addEventListener('click', this.handleDashboardClick);
+        }
     }
 
-    // Make available globally
+    // Export the class
     if (typeof window !== 'undefined') {
         window.AdminDashboard = AdminDashboard;
-        console.log('AdminDashboard class registered globally');
-    }
-    
-    // Export for module systems
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = AdminDashboard;
-    }
-
+    } 
 })();
