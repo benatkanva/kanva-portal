@@ -374,24 +374,51 @@ class KanvaApp {
      * Initialize admin panel
      */
     async initializeAdminPanel() {
-        // Check if admin access is enabled
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasAdminParam = urlParams.has('admin');
-        const hasAdminToken = localStorage.getItem('kanvaAdminToken');
+        console.log('🔧 Initializing admin panel...');
         
-        if (hasAdminParam || hasAdminToken) {
-            console.log('🔒 Admin access detected');
+        try {
+            // Check if admin access is enabled via URL parameter or token
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasAdminParam = urlParams.has('admin');
+            const hasAdminToken = localStorage.getItem('kanvaAdminToken');
+            const isDevMode = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             
-            // Show admin panel
-            const adminPanel = document.getElementById('adminPanel');
-            if (adminPanel) {
-                adminPanel.classList.add('show');
+            if (hasAdminParam || hasAdminToken || isDevMode) {
+                console.log('🔒 Admin access detected');
+                
+                // Initialize AdminManager if not already done
+                if (!this.modules.admin && typeof AdminManager === 'function') {
+                    console.log('🔄 Initializing AdminManager...');
+                    this.modules.admin = new AdminManager({
+                        calculator: this.calculator,
+                        dataManager: this.modules.dataManager
+                    });
+                }
+                
+                // Initialize admin components if available
+                if (this.modules.admin && typeof this.modules.admin.init === 'function') {
+                    console.log('⚙️ Initializing admin components...');
+                    await this.modules.admin.init();
+                    
+                    // Show admin button if hidden
+                    const adminBtn = document.getElementById('adminToggle');
+                    if (adminBtn) {
+                        adminBtn.style.display = 'inline-block';
+                    }
+                } else {
+                    console.warn('⚠️ AdminManager not available or missing init method');
+                }
+                
+                // Show admin panel if it exists
+                const adminPanel = document.getElementById('adminPanel');
+                if (adminPanel) {
+                    adminPanel.classList.add('show');
+                }
+            } else {
+                console.log('👤 Admin access not requested');
             }
-            
-            // Initialize admin components
-            if (this.modules.admin) {
-                this.modules.admin.initialize();
-            }
+        } catch (error) {
+            console.error('❌ Failed to initialize admin panel:', error);
         }
     }
 

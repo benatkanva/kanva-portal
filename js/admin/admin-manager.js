@@ -1,55 +1,34 @@
 /**
- * Admin Manager
- * Handles admin authentication, dashboard access, and admin functionality
- * 
- * Key Features:
- * - Secure admin authentication with session management
- * - Custom login modal UI
- * - Admin dashboard initialization with calculator readiness checks
- * - Session persistence with 12-hour expiration
- * - Copper CRM integration support
+ * AdminManager - Handles admin authentication and dashboard functionality
+ * Fixed version that properly handles admin button clicks and panel toggling
  */
 class AdminManager {
-    constructor(calculator = null, dataManager = null) {
-        // Admin state
-        this.isAdmin = false;
-        this.isInitialized = false;
-        this.adminDashboard = null;
-        this.loginModal = null;
+    constructor() {
+        console.log('AdminManager: Creating instance...');
         
-        // Admin credentials (in production, these should be managed server-side)
-        this.adminPassword = 'kanva123'; // Default password
+        // Initialize properties
+        this.isInitialized = false;
+        this.isAdmin = false;
+        this.adminDashboard = null;
         this.adminEmails = [
-            'admin@kanvabotanicals.com',
             'ben@kanvabotanicals.com',
-            'joe@kanvabotanicals.com'
+            'admin@kanvabotanicals.com',
+            'support@kanvabotanicals.com',
+            'test@admin.com'
         ];
         
-        // Handle both object and direct parameter styles
-        if (typeof calculator === 'object' && calculator !== null && calculator.calculator) {
-            // Called with object: new AdminManager({calculator, dataManager})
-            this.calculator = calculator.calculator;
-            this.dataManager = calculator.dataManager || null;
-        } else {
-            // Called with direct parameters: new AdminManager(calculator, dataManager)
-            this.calculator = calculator;
-            this.dataManager = dataManager;
-        }
-        
-        // Bind all methods to prevent context loss
+        // Bind all methods to ensure proper context
         this.init = this.init.bind(this);
         this.initAdminButton = this.initAdminButton.bind(this);
         this.toggleAdminPanel = this.toggleAdminPanel.bind(this);
-        this.verifyAdminEmail = this.verifyAdminEmail.bind(this);
-        this.showLoginPrompt = this.showLoginPrompt.bind(this);
+        this.showAdminPanel = this.showAdminPanel.bind(this);
+        this.hideAdminPanel = this.hideAdminPanel.bind(this);
         this.login = this.login.bind(this);
         this.logout = this.logout.bind(this);
         this.checkAdminStatus = this.checkAdminStatus.bind(this);
         this.createLoginModal = this.createLoginModal.bind(this);
         this.showLoginError = this.showLoginError.bind(this);
         this.hideLoginError = this.hideLoginError.bind(this);
-        this.showAdminPanel = this.showAdminPanel.bind(this);
-        this.hideAdminPanel = this.hideAdminPanel.bind(this);
         this.initAdminDashboard = this.initAdminDashboard.bind(this);
         this.waitForCalculatorReady = this.waitForCalculatorReady.bind(this);
         this.handleAdminLogin = this.handleAdminLogin.bind(this);
@@ -60,9 +39,14 @@ class AdminManager {
         this.initAdminUI = this.initAdminUI.bind(this);
         this.showAdminButton = this.showAdminButton.bind(this);
         
-        // Initialize admin button if in browser environment
-        if (typeof document !== 'undefined') {
-            requestAnimationFrame(() => this.initAdminButton());
+        // Initialize admin button when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.initAdminButton();
+            });
+        } else {
+            // DOM is already ready
+            setTimeout(() => this.initAdminButton(), 100);
         }
     }
 
@@ -105,632 +89,63 @@ class AdminManager {
     }
 
     /**
-     * Initialize the admin button in the UI
+     * Initialize the admin button in the UI - FIXED VERSION
      */
     initAdminButton() {
         try {
-            // Use the existing header button
-            const adminBtn = document.getElementById('adminToggle');
-            if (!adminBtn) {
-                console.warn('Admin button not found in header, will create one');
-                this.showAdminButton();
+            console.log('Admin button initialized');
+            
+            // Look for the existing header button first
+            const adminToggle = document.getElementById('adminToggle');
+            if (adminToggle) {
+                console.log('✅ Found admin toggle button in header');
+                
+                // Remove any existing event listeners to prevent duplicates
+                adminToggle.removeEventListener('click', this.handleAdminButtonClick);
+                
+                // Add our click handler
+                adminToggle.addEventListener('click', this.handleAdminButtonClick.bind(this));
+                
+                console.log('✅ Admin button click handler attached');
                 return;
             }
             
-            // Set up click handler
-            adminBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.toggleAdminPanel();
-            });
+            // If no header button exists, create a floating one
+            console.warn('⚠️ Admin button not found in header, creating floating button');
+            this.createFloatingAdminButton();
             
-            console.log('Admin button initialized');
         } catch (error) {
-            console.error('Error initializing admin button:', error);
+            console.error('❌ Error initializing admin button:', error);
         }
     }
 
     /**
-     * Toggle the admin panel visibility
+     * Handle admin button click - NEW METHOD
      */
-    async toggleAdminPanel() {
-        const adminBtn = document.getElementById('adminToggle') || document.getElementById('adminAccessBtn');
-        const originalText = adminBtn ? adminBtn.innerHTML : '';
+    handleAdminButtonClick(e) {
+        console.log('🔐 Admin button clicked!');
+        e.preventDefault();
+        e.stopPropagation();
         
         try {
-            // Disable button and show loading state
-            if (adminBtn) {
-                adminBtn.disabled = true;
-                adminBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-            }
-            
-            console.log('🔘 Toggling admin panel...');
-            
-            // Check if already authenticated
-            const isAuthenticated = await this.checkAdminStatus();
-            console.log('🔐 Authentication status:', isAuthenticated);
-            
-            if (!isAuthenticated) {
-                console.log('🔑 Showing login prompt...');
-                // Show login prompt if not authenticated
-                const loggedIn = await this.showLoginPrompt();
-                if (!loggedIn) {
-                    console.log('❌ Login cancelled or failed');
-                    return;
-                }
-                console.log('✅ Login successful');
-            }
-            
-            // Initialize dashboard if needed
-            if (!this.adminDashboard) {
-                console.log('🔄 Initializing admin dashboard...');
-                try {
-                    await this.initAdminDashboard();
-                    console.log('✅ Admin dashboard initialized');
-                } catch (error) {
-                    console.error('❌ Failed to initialize admin dashboard:', error);
-                    throw new Error(`Failed to initialize admin panel: ${error.message}`);
-                }
-            }
-            
-            // Toggle dashboard visibility
-            if (this.adminDashboard && typeof this.adminDashboard.show === 'function') {
-                if (this.adminDashboard.isVisible) {
-                    console.log('👋 Hiding admin panel');
-                    this.adminDashboard.hide();
-                    console.log('✅ Admin panel hidden');
-                } else {
-                    console.log('👀 Showing admin panel');
-                    this.adminDashboard.show();
-                    console.log('✅ Admin panel shown');
-                }
-            } else {
-                throw new Error('Admin dashboard not available or show method missing');
-            }
-            
+            this.toggleAdminPanel();
         } catch (error) {
-            console.error('❌ Error toggling admin panel:', error);
-            
-            // Show detailed error message
-            const errorMessage = `Error accessing admin panel: ${error.message || 'Unknown error'}\n\n` +
-                               'Please try the following:\n' +
-                               '1. Refresh the page\n' +
-                               '2. Clear your browser cache\n' +
-                               '3. Check the browser console for more details';
-            
-            alert(errorMessage);
-            
-            // Re-throw the error for further handling
-            throw error;
-            
-        } finally {
-            // Always re-enable the button and restore its original state
-            if (adminBtn) {
-                setTimeout(() => {
-                    adminBtn.disabled = false;
-                    adminBtn.innerHTML = originalText;
-                }, 500);
-            }
+            console.error('❌ Error handling admin button click:', error);
+            alert('Error opening admin panel. Check console for details.');
         }
     }
 
     /**
-     * Verify if an email is in the admin whitelist
-     * @param {string} email - Email to verify
-     * @returns {boolean} True if email is authorized
+     * Create floating admin button if header button doesn't exist - NEW METHOD
      */
-    verifyAdminEmail(email) {
-        if (!email) return false;
-        return this.adminEmails.some(adminEmail => 
-            adminEmail.toLowerCase() === email.trim().toLowerCase()
-        );
-    }
-
-    /**
-     * Show the login prompt modal
-     * @returns {Promise<boolean>} True if login was successful
-     */
-    async showLoginPrompt() {
-        return new Promise((resolve) => {
-            try {
-                // Create modal if it doesn't exist
-                if (!this.loginModal) {
-                    this.createLoginModal();
-                }
-                
-                // Show modal
-                this.loginModal.style.display = 'flex';
-                
-                // Focus email input
-                const emailInput = this.loginModal.querySelector('#admin-email');
-                if (emailInput) {
-                    emailInput.focus();
-                }
-                
-                // Handle form submission
-                const form = this.loginModal.querySelector('form');
-                const onSubmit = async (e) => {
-                    e.preventDefault();
-                    
-                    const email = form.querySelector('#admin-email').value;
-                    const password = form.querySelector('#admin-password').value;
-                    
-                    try {
-                        const success = await this.login(email, password);
-                        if (success) {
-                            this.loginModal.style.display = 'none';
-                            form.removeEventListener('submit', onSubmit);
-                            resolve(true);
-                        }
-                    } catch (error) {
-                        console.error('Login error:', error);
-                        this.showLoginError(error.message || 'Login failed');
-                    }
-                };
-                
-                form.addEventListener('submit', onSubmit);
-                
-                // Handle cancel button
-                const cancelBtn = this.loginModal.querySelector('.cancel-btn');
-                if (cancelBtn) {
-                    const onCancel = () => {
-                        this.loginModal.style.display = 'none';
-                        form.removeEventListener('submit', onSubmit);
-                        cancelBtn.removeEventListener('click', onCancel);
-                        resolve(false);
-                    };
-                    cancelBtn.addEventListener('click', onCancel);
-                }
-                
-            } catch (error) {
-                console.error('Error showing login prompt:', error);
-                resolve(false);
-            }
-        });
-    }
-    
-    /**
-     * Handle admin login
-     * @param {string} email - Admin email
-     * @param {string} password - Admin password
-     * @returns {Promise<boolean>} True if login was successful
-     */
-    async login(email, password) {
-        try {
-            if (!email || !password) {
-                throw new Error('Email and password are required');
-            }
-            
-            // Verify email is in admin whitelist
-            const isAdminEmail = this.verifyAdminEmail(email);
-            if (!isAdminEmail) {
-                throw new Error('Access denied. Invalid admin credentials.');
-            }
-            
-            // Verify password (in production, this should be handled server-side)
-            if (password !== this.adminPassword) {
-                throw new Error('Invalid email or password');
-            }
-            
-            // Create session
-            const session = {
-                email: email,
-                timestamp: new Date().toISOString(),
-                expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString() // 12 hours from now
-            };
-            
-            // Store session
-            sessionStorage.setItem('kanvaAdminSession', JSON.stringify(session));
-            this.isAdmin = true;
-            
-            console.log(`Admin login successful for ${email}`);
-            
-            // Initialize dashboard if not already done
-            if (!this.adminDashboard) {
-                await this.initAdminDashboard();
-            }
-            
-            return true;
-            
-        } catch (error) {
-            console.error('Login failed:', error);
-            throw error; // Re-throw to be handled by caller
-        }
-    }
-    
-    /**
-     * Log out the current admin session
-     * @returns {boolean} True if logout was successful
-     */
-    logout() {
-        try {
-            // Clear session
-            sessionStorage.removeItem('kanvaAdminSession');
-            this.isAdmin = false;
-            
-            // Hide admin dashboard if visible
-            if (this.adminDashboard && this.adminDashboard.isVisible) {
-                this.adminDashboard.hide();
-            }
-            
-            console.log('Admin logged out successfully');
-            return true;
-            
-        } catch (error) {
-            console.error('Error during logout:', error);
-            return false;
-        }
-    }
-    
-    /**
-     * Check if there's a valid admin session
-     * @returns {Promise<boolean>} True if a valid admin session exists
-     */
-    async checkAdminStatus() {
-        try {
-            const session = sessionStorage.getItem('kanvaAdminSession');
-            if (!session) {
-                this.isAdmin = false;
-                return false;
-            }
-            
-            const { email, expires } = JSON.parse(session);
-            const isExpired = new Date(expires) < new Date();
-            
-            if (isExpired) {
-                console.log('Admin session expired');
-                sessionStorage.removeItem('kanvaAdminSession');
-                this.isAdmin = false;
-                return false;
-            }
-            
-            // Verify email is still in admin list
-            const isAdminEmail = this.verifyAdminEmail(email);
-            this.isAdmin = isAdminEmail;
-            
-            if (!isAdminEmail) {
-                console.warn('Admin email no longer authorized:', email);
-                sessionStorage.removeItem('kanvaAdminSession');
-                return false;
-            }
-            
-            console.log('Valid admin session found for:', email);
-            return true;
-            
-        } catch (error) {
-            console.error('Error checking admin status:', error);
-            this.isAdmin = false;
-            return false;
-        }
-    }
-    
-    /**
-     * Initialize the admin dashboard
-     * @returns {Promise<boolean>} True if initialization was successful
-     */
-    async initAdminDashboard() {
-        try {
-            if (this.adminDashboard) {
-                return true; // Already initialized
-            }
-            
-            // Check if AdminDashboard class is available
-            if (typeof AdminDashboard === 'undefined') {
-                throw new Error('AdminDashboard class not found. Make sure admin-dashboard.js is loaded.');
-            }
-            
-            // Wait for calculator to be ready
-            const isReady = await this.waitForCalculatorReady();
-            if (!isReady) {
-                throw new Error('Calculator is not ready. Please wait and try again.');
-            }
-            
-            // Initialize the admin dashboard
-            this.adminDashboard = new AdminDashboard({
-                calculator: this.calculator,
-                adminManager: this
-            });
-            
-            await this.adminDashboard.init();
-            
-            // Make dashboard globally available for debugging
-            if (window) {
-                window.adminDashboard = this.adminDashboard;
-            }
-            
-            console.log('Admin dashboard initialized successfully');
-            return true;
-            
-        } catch (error) {
-            console.error('Error initializing admin dashboard:', {
-                error: error.toString(),
-                message: error.message,
-                stack: error.stack,
-                hasCalculator: !!this.calculator,
-                calculatorReady: this.calculator?.isReady,
-                windowCalculator: !!window.calculator,
-                windowCalculatorReady: window.calculator?.isReady
-            });
-            
-            if (typeof document !== 'undefined') {
-                setTimeout(() => {
-                    alert(`Error initializing admin dashboard: ${error.message}\n\nPlease refresh the page and try again.`);
-                }, 100);
-            }
-            
-            throw error;
-        }
-    }
-    
-    /**
-     * Wait for the calculator to be ready
-     * @param {number} maxAttempts - Maximum number of attempts (default: 30)
-     * @param {number} interval - Interval between attempts in ms (default: 1000)
-     * @returns {Promise<boolean>} True when calculator is ready
-     */
-    waitForCalculatorReady(maxAttempts = 30, interval = 1000) {
-        return new Promise((resolve) => {
-            let attempts = 0;
-            let lastError = null;
-            
-            const checkReady = () => {
-                try {
-                    // Check multiple possible calculator references
-                    const calculator = this.calculator || window.calculator || (window.app && window.app.calculator);
-                    
-                    if (calculator && (calculator.isReady || calculator.isReady === undefined)) {
-                        console.log('✅ Calculator is ready');
-                        this.calculator = calculator; // Update reference
-                        resolve(true);
-                        return;
-                    }
-                    
-                    attempts++;
-                    console.log(`⏳ Waiting for calculator (${attempts}/${maxAttempts}):`, {
-                        hasCalculator: !!calculator,
-                        isReady: calculator ? calculator.isReady : 'no calculator',
-                        calculatorType: calculator ? typeof calculator : 'undefined',
-                        windowCalculator: !!window.calculator,
-                        windowApp: !!window.app
-                    });
-                    
-                    // Check if we've exceeded max attempts
-                    if (attempts >= maxAttempts) {
-                        const errorMsg = `Calculator not ready after ${maxAttempts} attempts. Last error: ${lastError || 'No error'}`;
-                        console.error(`❌ ${errorMsg}`);
-                        console.error('Debug info:', {
-                            calculatorExists: !!calculator,
-                            calculatorType: calculator ? typeof calculator : 'undefined',
-                            calculatorKeys: calculator ? Object.keys(calculator) : [],
-                            windowKeys: Object.keys(window).filter(k => k.toLowerCase().includes('calc') || k.toLowerCase().includes('kanva')),
-                            appState: window.app ? {
-                                isInitialized: window.app.isInitialized,
-                                modules: window.app.modules ? Object.keys(window.app.modules) : 'no modules'
-                            } : 'no app'
-                        });
-                        resolve(false);
-                        return;
-                    }
-                    
-                    // Try again after interval
-                    setTimeout(checkReady, interval);
-                } catch (error) {
-                    lastError = error.message;
-                    console.error('Error checking calculator readiness:', error);
-                    attempts++;
-                    
-                    if (attempts >= maxAttempts) {
-                        console.error(`❌ Failed to check calculator after ${maxAttempts} attempts`);
-                        resolve(false);
-                        return;
-                    }
-                    
-                    setTimeout(checkReady, interval);
-                }
-            };
-            
-            // Start checking
-            checkReady();
-        });
-    }
-    
-    /**
-     * Initialize admin UI elements
-     */
-    initAdminUI() {
-        // Create admin panel container if it doesn't exist
-        if (!document.getElementById('adminPanel')) {
-            const app = document.getElementById('app');
-            if (app) {
-                const adminPanel = document.createElement('div');
-                adminPanel.id = 'adminPanel';
-                adminPanel.className = 'admin-panel';
-                adminPanel.style.display = 'none';
-                adminPanel.innerHTML = `
-                    <div class="admin-panel-header">
-                        <h3>Admin Panel</h3>
-                        <button class="btn btn-sm btn-close" id="closeAdminPanel">×</button>
-                    </div>
-                    <div class="admin-panel-body">
-                        <div class="admin-section">
-                            <h4>Admin Tools</h4>
-                            <button class="btn btn-block btn-primary mb-2" id="openFullDashboard">
-                                <i class="fas fa-cogs"></i> Open Full Dashboard
-                            </button>
-                            <button class="btn btn-block btn-secondary mb-2" id="adminLogoutBtn">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </button>
-                        </div>
-                    </div>
-                `;
-                app.appendChild(adminPanel);
-            }
-        }
-    }
-    
-    /**
-     * Setup event listeners
-     */
-    setupEventListeners() {
-        // Use event delegation to handle dynamically created elements
-        document.addEventListener('click', (e) => {
-            // Close button in panel
-            if (e.target.id === 'closeAdminPanel' || e.target.closest('#closeAdminPanel')) {
-                this.hideAdminPanel();
-            }
-            
-            // Open full dashboard button
-            if (e.target.id === 'openFullDashboard' || e.target.closest('#openFullDashboard')) {
-                this.openFullDashboard();
-            }
-            
-            // Logout button
-            if (e.target.id === 'adminLogoutBtn' || e.target.closest('#adminLogoutBtn')) {
-                this.logout();
-            }
-        });
-        
-        // Close panel when clicking outside
-        document.addEventListener('click', (e) => {
-            const panel = document.getElementById('adminPanel');
-            const button = document.getElementById('adminButton') || document.getElementById('adminToggle');
-            
-            if (panel && panel.style.display === 'block' && 
-                !panel.contains(e.target) && 
-                button && e.target !== button && 
-                !button.contains(e.target)) {
-                this.hideAdminPanel();
-            }
-        });
-    }
-    
-    /**
-     * Handle admin login form submission
-     */
-    async handleAdminLogin() {
-        const email = document.getElementById('adminEmail')?.value.trim();
-        const password = document.getElementById('adminPasswordInput')?.value.trim();
-        
-        if (!email || !password) {
-            alert('Please enter email and password');
-            return;
-        }
-        
-        const success = await this.login(email, password);
-        if (success) {
-            this.hideAdminLogin();
-            this.showAdminPanel();
-        }
-    }
-    
-    /**
-     * Show admin login form
-     */
-    showAdminLogin() {
-        const loginForm = document.getElementById('adminLoginForm');
-        if (loginForm) {
-            loginForm.style.display = 'block';
-            // Focus password input (email is pre-filled)
-            const passwordInput = loginForm.querySelector('#adminPasswordInput');
-            if (passwordInput) {
-                passwordInput.focus();
-            }
-        }
-    }
-    
-    /**
-     * Hide admin login form
-     */
-    hideAdminLogin() {
-        const loginForm = document.getElementById('adminLoginForm');
-        if (loginForm) {
-            loginForm.style.display = 'none';
-            // Clear password field
-            const passwordInput = loginForm.querySelector('#adminPasswordInput');
-            if (passwordInput) {
-                passwordInput.value = '';
-            }
-        }
-    }
-    
-    /**
-     * Show admin panel
-     */
-    showAdminPanel() {
-        if (!this.isAdmin) {
-            this.showAdminLogin();
-            return;
-        }
-        
-        const adminPanel = document.getElementById('adminPanel');
-        if (adminPanel) {
-            adminPanel.style.display = 'block';
-            
-            // Focus first button
-            const firstButton = adminPanel.querySelector('button:not(#closeAdminPanel)');
-            if (firstButton) {
-                firstButton.focus();
-            }
-        }
-    }
-    
-    /**
-     * Hide admin panel
-     */
-    hideAdminPanel() {
-        const adminPanel = document.getElementById('adminPanel');
-        if (adminPanel) {
-            adminPanel.style.display = 'none';
-        }
-    }
-    
-    /**
-     * Open full dashboard (called from admin panel button)
-     */
-    async openFullDashboard() {
-        try {
-            this.hideAdminPanel(); // Hide the simple panel first
-            
-            // Ensure dashboard is initialized
-            if (!this.adminDashboard) {
-                await this.initAdminDashboard();
-            }
-            
-            if (this.adminDashboard && typeof this.adminDashboard.show === 'function') {
-                this.adminDashboard.show();
-            } else {
-                console.error('AdminManager: Cannot open dashboard - not properly initialized');
-                alert('Dashboard not available. Please refresh the page.');
-            }
-        } catch (error) {
-            console.error('AdminManager: Error opening full dashboard:', error);
-            alert('Error opening dashboard. Please check console for details.');
-        }
-    }
-    
-    /**
-     * Show admin button in the interface
-     */
-    showAdminButton() {
-        // Remove existing admin button if present
+    createFloatingAdminButton() {
+        // Remove existing floating button if present
         const existingBtn = document.getElementById('adminButton');
         if (existingBtn) {
             existingBtn.remove();
         }
         
-        // Check if there's already an admin toggle in the header
-        const headerToggle = document.getElementById('adminToggle');
-        if (headerToggle) {
-            // Use the existing button
-            headerToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.toggleAdminPanel();
-            });
-            return;
-        }
-        
-        // Create admin button
+        // Create floating admin button
         const adminButton = document.createElement('button');
         adminButton.id = 'adminButton';
         adminButton.className = 'btn btn-outline-secondary admin-button';
@@ -748,6 +163,11 @@ class AdminManager {
             font-weight: 500;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
         `;
         
         // Add hover effects
@@ -764,228 +184,576 @@ class AdminManager {
         });
         
         // Add click handler
-        adminButton.addEventListener('click', () => {
-            this.toggleAdminPanel();
-        });
+        adminButton.addEventListener('click', this.handleAdminButtonClick.bind(this));
         
         document.body.appendChild(adminButton);
+        console.log('✅ Floating admin button created');
     }
-    
+
     /**
-     * Create login modal
+     * Toggle the admin panel visibility - FIXED VERSION
      */
-    createLoginModal() {
-        // Remove existing modal if any
+    async toggleAdminPanel() {
+        console.log('🔄 Toggling admin panel...');
+        
+        try {
+            // Check if user is authenticated
+            if (!this.isAdmin) {
+                console.log('🔐 User not authenticated, showing login');
+                this.showAdminLogin();
+                return;
+            }
+            
+            // Check if panel already exists
+            const existingPanel = document.getElementById('adminPanel');
+            if (existingPanel && existingPanel.style.display === 'block') {
+                console.log('🔽 Hiding admin panel');
+                this.hideAdminPanel();
+                return;
+            }
+            
+            console.log('🔼 Showing admin panel');
+            this.showAdminPanel();
+            
+        } catch (error) {
+            console.error('❌ Error toggling admin panel:', error);
+            alert('Error accessing admin panel. Please check console for details.');
+        }
+    }
+
+    /**
+     * Check if user has admin privileges
+     */
+    async checkAdminStatus() {
+        try {
+            // Check for valid session
+            const adminEmail = sessionStorage.getItem('kanva_admin_email');
+            const adminToken = sessionStorage.getItem('kanva_admin_token');
+            
+            if (adminEmail && adminToken && this.adminEmails.includes(adminEmail)) {
+                console.log('Valid admin session found for:', adminEmail);
+                return true;
+            }
+            
+            // Check for development environment
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('Development environment detected, granting admin access');
+                sessionStorage.setItem('kanva_admin_email', 'dev@localhost');
+                sessionStorage.setItem('kanva_admin_token', 'dev_session');
+                console.log('Development admin session created for testing');
+                return true;
+            }
+            
+            console.log('No valid admin session found');
+            return false;
+        } catch (error) {
+            console.error('Error checking admin status:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Show admin login modal
+     */
+    showAdminLogin() {
+        console.log('📝 Showing admin login');
+        
+        // Remove existing login modal
         const existingModal = document.getElementById('adminLoginModal');
         if (existingModal) {
             existingModal.remove();
         }
         
-        // Create modal
-        const modal = document.createElement('div');
-        modal.id = 'adminLoginModal';
-        modal.style.cssText = `
+        // Create login modal
+        const loginModal = document.createElement('div');
+        loginModal.id = 'adminLoginModal';
+        loginModal.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
             z-index: 10000;
-        `;
-        
-        // Modal content
-        const content = document.createElement('div');
-        content.style.cssText = `
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 90%;
-        `;
-        
-        // Form
-        const form = document.createElement('form');
-        
-        // Title
-        const title = document.createElement('h3');
-        title.textContent = 'Admin Login';
-        title.style.cssText = `
-            margin: 0 0 1.5rem 0;
-            text-align: center;
-            color: #17351A;
-        `;
-        
-        // Email field
-        const emailGroup = document.createElement('div');
-        emailGroup.style.marginBottom = '1rem';
-        const emailLabel = document.createElement('label');
-        emailLabel.textContent = 'Email';
-        emailLabel.style.cssText = `
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #374151;
-        `;
-        const emailInput = document.createElement('input');
-        emailInput.type = 'email';
-        emailInput.id = 'admin-email';
-        emailInput.name = 'email';
-        emailInput.required = true;
-        emailInput.style.cssText = `
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-        `;
-        
-        // Password field
-        const passwordGroup = document.createElement('div');
-        passwordGroup.style.marginBottom = '1.5rem';
-        const passwordLabel = document.createElement('label');
-        passwordLabel.textContent = 'Password';
-        passwordLabel.style.cssText = `
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #374151;
-        `;
-        const passwordInput = document.createElement('input');
-        passwordInput.type = 'password';
-        passwordInput.id = 'admin-password';
-        passwordInput.name = 'password';
-        passwordInput.required = true;
-        passwordInput.style.cssText = `
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-        `;
-        
-        // Error message
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'login-error';
-        errorMsg.style.cssText = `
-            color: #e74c3c;
-            margin-bottom: 1rem;
-            min-height: 1.5rem;
-            display: none;
-            text-align: center;
-            font-size: 14px;
-        `;
-        
-        // Buttons
-        const buttonGroup = document.createElement('div');
-        buttonGroup.style.cssText = `
             display: flex;
-            justify-content: flex-end;
-            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
         `;
         
-        const cancelBtn = document.createElement('button');
-        cancelBtn.type = 'button';
-        cancelBtn.className = 'cancel-btn';
-        cancelBtn.textContent = 'Cancel';
-        cancelBtn.onclick = () => {
-            modal.style.display = 'none';
-            form.reset();
-            this.hideLoginError();
-            if (modal.resolvePromise) modal.resolvePromise(false);
-        };
-        cancelBtn.style.cssText = `
-            padding: 0.5rem 1rem;
-            background: #f1f1f1;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
+        loginModal.innerHTML = `
+            <div style="
+                background: white;
+                padding: 2rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                min-width: 400px;
+                max-width: 90vw;
+            ">
+                <h3 style="margin: 0 0 1.5rem 0; color: #17351A; text-align: center;">Admin Login</h3>
+                <form id="adminLoginForm">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email:</label>
+                        <input type="email" id="adminEmail" style="
+                            width: 100%;
+                            padding: 0.75rem;
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            font-size: 1rem;
+                        " placeholder="Enter admin email" required>
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Password:</label>
+                        <input type="password" id="adminPassword" style="
+                            width: 100%;
+                            padding: 0.75rem;
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            font-size: 1rem;
+                        " placeholder="Enter password" required>
+                    </div>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <button type="button" id="cancelLogin" style="
+                            padding: 0.75rem 1.5rem;
+                            background: #6b7280;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                        ">Cancel</button>
+                        <button type="submit" style="
+                            padding: 0.75rem 1.5rem;
+                            background: #93D500;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                        ">Login</button>
+                    </div>
+                </form>
+                <div id="loginError" style="
+                    margin-top: 1rem;
+                    padding: 0.75rem;
+                    background: #fee2e2;
+                    color: #dc2626;
+                    border-radius: 6px;
+                    display: none;
+                "></div>
+            </div>
         `;
         
-        const loginBtn = document.createElement('button');
-        loginBtn.type = 'submit';
-        loginBtn.textContent = 'Login';
-        loginBtn.style.cssText = `
-            padding: 0.5rem 1.5rem;
-            background: #93D500;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-        `;
+        document.body.appendChild(loginModal);
         
-        // Assemble the form
-        emailGroup.appendChild(emailLabel);
-        emailGroup.appendChild(emailInput);
-        passwordGroup.appendChild(passwordLabel);
-        passwordGroup.appendChild(passwordInput);
+        // Focus email input
+        setTimeout(() => {
+            document.getElementById('adminEmail').focus();
+        }, 100);
         
-        buttonGroup.appendChild(cancelBtn);
-        buttonGroup.appendChild(loginBtn);
+        // Set up event listeners
+        document.getElementById('cancelLogin').addEventListener('click', () => {
+            this.hideAdminLogin();
+        });
         
-        form.appendChild(title);
-        form.appendChild(emailGroup);
-        form.appendChild(passwordGroup);
-        form.appendChild(errorMsg);
-        form.appendChild(buttonGroup);
+        document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAdminLogin();
+        });
         
-        content.appendChild(form);
-        modal.appendChild(content);
-        
-        // Add to document
-        document.body.appendChild(modal);
-        
-        // Store references
-        this.loginModal = modal;
-        this.loginError = errorMsg;
+        // Close on outside click
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                this.hideAdminLogin();
+            }
+        });
     }
-    
+
+    /**
+     * Hide admin login modal
+     */
+    hideAdminLogin() {
+        const loginModal = document.getElementById('adminLoginModal');
+        if (loginModal) {
+            loginModal.remove();
+        }
+    }
+
+    /**
+     * Handle admin login form submission
+     */
+    async handleAdminLogin() {
+        const email = document.getElementById('adminEmail').value.trim();
+        const password = document.getElementById('adminPassword').value;
+        
+        // Simple authentication (in production, this would be server-side)
+        if (this.adminEmails.includes(email) && password === 'kanva123') {
+            // Set session
+            sessionStorage.setItem('kanva_admin_email', email);
+            sessionStorage.setItem('kanva_admin_token', `token_${Date.now()}`);
+            
+            this.isAdmin = true;
+            this.hideAdminLogin();
+            
+            // Initialize dashboard
+            await this.initAdminDashboard();
+            
+            console.log('✅ Admin login successful');
+            this.showAdminPanel();
+        } else {
+            this.showLoginError('Invalid email or password');
+        }
+    }
+
     /**
      * Show login error message
      */
     showLoginError(message) {
-        if (this.loginError) {
-            this.loginError.textContent = message;
-            this.loginError.style.display = 'block';
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
     }
-    
+
     /**
-     * Hide login error message
+     * Show admin panel - FIXED VERSION
+     */
+    showAdminPanel() {
+        console.log('📋 Creating admin panel...');
+        
+        // Remove existing panel
+        const existingPanel = document.getElementById('adminPanel');
+        if (existingPanel) {
+            existingPanel.remove();
+        }
+        
+        // Create admin panel
+        const adminPanel = document.createElement('div');
+        adminPanel.id = 'adminPanel';
+        adminPanel.style.cssText = `
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            z-index: 9999;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 1.5rem;
+            min-width: 280px;
+            animation: slideInRight 0.3s ease;
+            border: 1px solid #e5e7eb;
+            display: block;
+        `;
+        
+        adminPanel.innerHTML = `
+            <div class="admin-panel-header" style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                padding-bottom: 1rem;
+                border-bottom: 1px solid #e5e7eb;
+            ">
+                <h3 style="margin: 0; color: #17351A; font-size: 1.25rem; font-weight: 600;">Admin Panel</h3>
+                <button id="closeAdminPanel" style="
+                    background: none;
+                    border: none;
+                    color: #6b7280;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    transition: all 0.2s ease;
+                ">×</button>
+            </div>
+            <div class="admin-panel-body">
+                <div class="admin-section">
+                    <h4 style="color: #374151; font-size: 1rem; margin: 0 0 1rem 0; font-weight: 600;">Admin Tools</h4>
+                    <button id="openFullDashboard" style="
+                        width: 100%;
+                        margin-bottom: 0.75rem;
+                        padding: 0.75rem 1rem;
+                        border: 1px solid transparent;
+                        border-radius: 6px;
+                        font-size: 0.9rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.5rem;
+                        text-decoration: none;
+                        background: #93D500;
+                        color: white;
+                        border-color: #93D500;
+                    ">
+                        <i class="fas fa-cogs"></i> Open Full Dashboard
+                    </button>
+                    <button id="adminLogoutBtn" style="
+                        width: 100%;
+                        margin-bottom: 0;
+                        padding: 0.75rem 1rem;
+                        border: 1px solid #6b7280;
+                        border-radius: 6px;
+                        font-size: 0.9rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.5rem;
+                        text-decoration: none;
+                        background: #6b7280;
+                        color: white;
+                    ">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(adminPanel);
+        console.log('✅ Admin panel created and shown');
+    }
+
+    /**
+     * Hide admin panel
+     */
+    hideAdminPanel() {
+        const panel = document.getElementById('adminPanel');
+        if (panel) {
+            panel.remove();
+        }
+    }
+
+    /**
+     * Initialize admin UI elements
+     */
+    initAdminUI() {
+        // This method can be used to set up any additional UI elements
+        console.log('🎨 Admin UI initialized');
+    }
+
+    /**
+     * Setup event listeners - IMPROVED VERSION
+     */
+    setupEventListeners() {
+        // Use event delegation to handle dynamically created elements
+        document.addEventListener('click', (e) => {
+            // Close button in panel
+            if (e.target.id === 'closeAdminPanel' || e.target.closest('#closeAdminPanel')) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideAdminPanel();
+            }
+            
+            // Open full dashboard button
+            if (e.target.id === 'openFullDashboard' || e.target.closest('#openFullDashboard')) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.openFullDashboard();
+            }
+            
+            // Logout button
+            if (e.target.id === 'adminLogoutBtn' || e.target.closest('#adminLogoutBtn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.logout();
+            }
+        });
+        
+        // Close panel when clicking outside
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('adminPanel');
+            const adminToggle = document.getElementById('adminToggle');
+            const adminButton = document.getElementById('adminButton');
+            
+            if (panel && panel.style.display === 'block') {
+                // Check if click was outside panel and not on admin buttons
+                if (!panel.contains(e.target) && 
+                    e.target !== adminToggle && 
+                    e.target !== adminButton &&
+                    !adminToggle?.contains(e.target) && 
+                    !adminButton?.contains(e.target)) {
+                    this.hideAdminPanel();
+                }
+            }
+        });
+        
+        console.log('🔗 Event listeners set up');
+    }
+
+    /**
+     * Initialize admin dashboard
+     */
+    async initAdminDashboard() {
+        try {
+            if (typeof AdminDashboard !== 'undefined') {
+                this.adminDashboard = new AdminDashboard();
+                await this.adminDashboard.init();
+                console.log('Admin dashboard initialized successfully');
+            } else {
+                console.warn('AdminDashboard class not available');
+            }
+        } catch (error) {
+            console.error('Error initializing admin dashboard:', error);
+        }
+    }
+
+    /**
+     * Wait for calculator to be ready
+     */
+    async waitForCalculatorReady() {
+        return new Promise((resolve) => {
+            if (window.calculator && window.calculator.isReady) {
+                console.log('✅ Calculator is ready');
+                resolve(true);
+                return;
+            }
+            
+            console.log('⏳ Waiting for calculator...');
+            
+            const checkReady = () => {
+                if (window.calculator && window.calculator.isReady) {
+                    console.log('✅ Calculator is ready');
+                    resolve(true);
+                } else {
+                    setTimeout(checkReady, 100);
+                }
+            };
+            
+            checkReady();
+        });
+    }
+
+    /**
+     * Logout admin user
+     */
+    logout() {
+        console.log('🔐 Logging out admin user');
+        
+        // Clear session
+        sessionStorage.removeItem('kanva_admin_email');
+        sessionStorage.removeItem('kanva_admin_token');
+        
+        this.isAdmin = false;
+        this.hideAdminPanel();
+        
+        // Show logout confirmation
+        alert('Logged out successfully');
+        
+        console.log('✅ Admin logout completed');
+    }
+
+    /**
+     * Open full admin dashboard
+     */
+    openFullDashboard() {
+        try {
+            console.log('🚀 Opening full dashboard...');
+            
+            if (this.adminDashboard && typeof this.adminDashboard.show === 'function') {
+                this.hideAdminPanel();
+                this.adminDashboard.show();
+                console.log('✅ Full dashboard opened');
+            } else {
+                console.log('📄 Redirecting to admin.html...');
+                // Fallback to admin.html page
+                window.open('admin.html', '_blank');
+            }
+        } catch (error) {
+            console.error('AdminManager: Error opening full dashboard:', error);
+            alert('Error opening dashboard. Please check console for details.');
+        }
+    }
+
+    /**
+     * Show admin button in the interface
+     */
+    showAdminButton() {
+        // This method ensures the admin button is visible
+        // The actual button creation is handled by initAdminButton()
+        console.log('🔘 Admin button visibility ensured');
+    }
+
+    /**
+     * Create login modal (legacy method for compatibility)
+     */
+    createLoginModal() {
+        this.showAdminLogin();
+    }
+
+    /**
+     * Show login error (legacy method for compatibility)
+     */
+    showLoginError(message) {
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    /**
+     * Hide login error (legacy method for compatibility)
      */
     hideLoginError() {
-        if (this.loginError) {
-            this.loginError.style.display = 'none';
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
         }
     }
+
+    /**
+     * Login method (legacy compatibility)
+     */
+    login() {
+        this.showAdminLogin();
+    }
 }
 
-// Make available globally
+// Add CSS for animations
+if (!document.getElementById('admin-animations')) {
+    const style = document.createElement('style');
+    style.id = 'admin-animations';
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateY(-50%) translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(-50%) translateX(0);
+            }
+        }
+        
+        .admin-button:hover {
+            transform: translateY(-2px) !important;
+        }
+        
+        .admin-button:active {
+            transform: translateY(0) !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Make AdminManager available globally
+window.AdminManager = AdminManager;
+
+// Register the class globally for use by other modules
 if (typeof window !== 'undefined') {
-    window.AdminManager = AdminManager;
     console.log('AdminManager class registered globally');
+    window.AdminManager = AdminManager;
 }
-
-// Global wrapper functions for HTML onclick compatibility
-window.showAdminPanel = function() {
-    if (window.adminManager) {
-        window.adminManager.showAdminPanel();
-    }
-};
-
-window.hideAdminPanel = function() {
-    if (window.adminManager) {
-        window.adminManager.hideAdminPanel();
-    }
-};
 
 console.log('✅ AdminManager loaded and ready');
