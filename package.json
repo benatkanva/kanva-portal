@@ -41,6 +41,7 @@
     "css-minimizer-webpack-plugin": "^5.0.1",
     "dotenv": "^17.1.0",
     "html-webpack-plugin": "^5.5.3",
+    "node-fishbowl": "^1.2.1",
     "postcss-loader": "^8.1.1",
     "react-refresh": "^0.14.0",
     "style-loader": "^3.3.3",

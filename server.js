@@ -7,6 +7,15 @@ const { createLogger, format, transports } = require('winston');
 // Load environment variables from .env file
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// Load Fishbowl ERP connector library
+let Fishbowl;
+try {
+    Fishbowl = require('node-fishbowl').Fishbowl || require('node-fishbowl');
+    console.log('✅ Fishbowl library loaded');
+} catch (error) {
+    console.warn('⚠️ Fishbowl library not available. Install node-fishbowl to enable Fishbowl ERP integration');
+}
+
 // Simple config object for server startup
 const config = {
     get: (key, defaultValue = null) => {
@@ -31,6 +40,38 @@ const config = {
 if (typeof global.AppConfig === 'undefined') {
     global.AppConfig = config;
 }
+
+// MIME types configuration with proper ES module support
+const MIME_TYPES = {
+    '.html': 'text/html',
+    '.js': 'application/javascript',
+    '.mjs': 'application/javascript',
+    '.cjs': 'application/javascript',
+    '.json': 'application/json',
+    '.css': 'text/css',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.eot': 'application/vnd.ms-fontobject',
+    '.otf': 'font/otf',
+    '.wasm': 'application/wasm'
+};
+
+// Add charset for JavaScript files
+const CHARSET_OVERRIDES = {
+    '.js': 'utf-8',
+    '.mjs': 'utf-8',
+    '.cjs': 'utf-8',
+    '.json': 'utf-8',
+    '.html': 'utf-8',
+    '.css': 'utf-8'
+};
 
 // Ensure consistent application root directory
 const APP_ROOT = __dirname;
@@ -74,19 +115,7 @@ try {
     };
 }
 
-// MIME types for different file extensions
-const MIME_TYPES = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon'
-};
+// MIME types are defined at the top of the file with ES module support
 
 // Create HTTP server with improved request handling and logging
 const server = http.createServer((req, res) => {
@@ -117,7 +146,117 @@ const server = http.createServer((req, res) => {
     }
     // Parse URL
     const parsedUrl = url.parse(req.url);
-    let pathname = path.join(APP_ROOT, parsedUrl.pathname);
+
+        // Fishbowl ERP test endpoint
+        if (parsedUrl.pathname === '/api/fishbowl/test' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', () => {
+                let params;
+                try {
+                    params = JSON.parse(body);
+                } catch (e) {
+                    res.writeHead(400, {'Content-Type': 'application/json'});
+                    res.end(JSON.stringify({ success: false, error: 'Invalid JSON' }));
+                    return;
+                }
+                if (!Fishbowl) {
+                    res.writeHead(500, {'Content-Type': 'application/json'});
+                    res.end(JSON.stringify({ success: false, error: 'Fishbowl library not available' }));
+                    return;
+                }
+                const FBClass = Fishbowl.Fishbowl ? Fishbowl.Fishbowl : Fishbowl;
+                const fb = new FBClass({
+                    host: params.host,
+                    port: params.port,
+                    username: params.username,
+                    password: params.password,
+                    IAID: params.IAID,
+                    IAName: params.IAName,
+                    IADescription: params.IADescription
+                });
+                fb.sendRequest({ action: 'ExecuteQueryRq', params: { Query: 'select * from customer' } })
+                    .then(response => {
+                        res.writeHead(200, {'Content-Type': 'application/json'});
+                        res.end(JSON.stringify({ success: true, message: 'Connected to Fishbowl ERP', data: response }));
+                    })
+                    .catch(error => {
+                        res.writeHead(500, {'Content-Type': 'application/json'});
+                        res.end(JSON.stringify({ success: false, error: error.message }));
+                    });
+            });
+            return;
+        }
+
+        // Copper CRM test endpoint (reads creds from env)
+        if (parsedUrl.pathname === '/api/copper/test' && req.method === 'GET') {
+            const apiKey = config.get('COPPER_API_KEY') || process.env.COPPER_API_KEY;
+            const userEmail = config.get('COPPER_USER_EMAIL') || process.env.COPPER_USER_EMAIL;
+            const apiUrl = config.get('COPPER_API_URL') || 'https://api.copper.com/developer_api/v1';
+            fetch(`${apiUrl}/account`, {
+                headers: {
+                    'X-PW-AccessToken': apiKey,
+                    'X-PW-Application': 'developer_api',
+                    'X-PW-UserEmail': userEmail,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => {
+                if (r.ok) {
+                    return r.json().then(data => {
+                        res.writeHead(200, {'Content-Type':'application/json'});
+                        res.end(JSON.stringify({ success: true, message: `Connected to ${data.name}` }));
+                    });
+                } else {
+                    res.writeHead(r.status, {'Content-Type':'application/json'});
+                    res.end(JSON.stringify({ success: false, error: `${r.status} ${r.statusText}` }));
+                }
+            }).catch(error => {
+                res.writeHead(500, {'Content-Type':'application/json'});
+                res.end(JSON.stringify({ success: false, error: error.message }));
+            });
+            return;
+        }
+
+        // Fishbowl test via env (GET)
+        if (parsedUrl.pathname === '/api/fishbowl/test' && req.method === 'GET') {
+            if (!Fishbowl) {
+                res.writeHead(500, {'Content-Type': 'application/json'});
+                res.end(JSON.stringify({ success: false, error: 'Fishbowl library not available' }));
+                return;
+            }
+            const fbHost = config.get('FISHBOWL_HOST') || process.env.FISHBOWL_HOST;
+            const fbPort = config.get('FISHBOWL_PORT') || process.env.FISHBOWL_PORT;
+            const fbUser = config.get('FISHBOWL_USERNAME') || process.env.FISHBOWL_USERNAME;
+            const fbPass = config.get('FISHBOWL_PASSWORD') || process.env.FISHBOWL_PASSWORD;
+            const IAID = config.get('FISHBOWL_IAID') || process.env.FISHBOWL_IAID;
+            const IAName = config.get('FISHBOWL_IANAME') || process.env.FISHBOWL_IANAME;
+            const IADesc = config.get('FISHBOWL_IADESCRIPTION') || process.env.FISHBOWL_IADESCRIPTION;
+            const FBClass = Fishbowl.Fishbowl ? Fishbowl.Fishbowl : Fishbowl;
+            const fb = new FBClass({
+                host: fbHost,
+                port: fbPort,
+                username: fbUser,
+                password: fbPass,
+                IAID: IAID,
+                IAName: IAName,
+                IADescription: IADesc
+            });
+            fb.sendRequest({ action: 'ExecuteQueryRq', params: { Query: 'select * from customer' } })
+                .then(responseData => {
+                    res.writeHead(200, {'Content-Type': 'application/json'});
+                    res.end(JSON.stringify({ success: true, message: 'Connected to Fishbowl ERP', data: responseData }));
+                })
+                .catch(err => {
+                    res.writeHead(500, {'Content-Type': 'application/json'});
+                    res.end(JSON.stringify({ success: false, error: err.message }));
+                });
+            return;
+        }
+
+    // Resolve file path relative to APP_ROOT, remove leading slash if present
+    const relativePath = parsedUrl.pathname.startsWith('/') ? parsedUrl.pathname.slice(1) : parsedUrl.pathname;
+    let pathname = path.join(APP_ROOT, relativePath);
     
     // If URL has no file extension or ends with '/', serve index.html for SPA routing
     if (path.extname(pathname) === '' || parsedUrl.pathname.endsWith('/')) {
@@ -126,7 +265,12 @@ const server = http.createServer((req, res) => {
     
     // Get file extension and set content type
     const ext = path.extname(pathname);
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    let contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    
+    // Ensure JavaScript files have the correct MIME type and charset
+    if (ext === '.js' || ext === '.mjs' || ext === '.cjs') {
+        contentType = 'application/javascript; charset=utf-8';
+    }
     
     // Log request
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} (${contentType})`);
@@ -148,6 +292,19 @@ const server = http.createServer((req, res) => {
         res.setHeader('Cache-Control', 'no-cache');
     }
     
+    // Set content type header with charset for text-based files
+    const headers = { 'Content-Type': contentType };
+    
+    // Add charset for text-based content
+    if (contentType.startsWith('text/') || 
+        contentType.includes('javascript') || 
+        contentType.includes('json') || 
+        contentType.includes('css')) {
+        if (!contentType.includes('charset')) {
+            headers['Content-Type'] = `${contentType}; charset=utf-8`;
+        }
+    }
+    
     // Read file
     fs.readFile(pathname, (error, content) => {
         if (error) {
@@ -158,7 +315,10 @@ const server = http.createServer((req, res) => {
                         res.writeHead(500);
                         res.end('Error loading index.html');
                     } else {
-                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.writeHead(200, { 
+                            'Content-Type': 'text/html; charset=utf-8',
+                            'X-Content-Type-Options': 'nosniff'
+                        });
                         res.end(content, 'utf-8');
                     }
                 });
@@ -168,13 +328,37 @@ const server = http.createServer((req, res) => {
                 res.end(`Server Error: ${error.code}`);
             }
         } else {
-            // Success
-            res.writeHead(200, { 
-                'Content-Type': contentType,
+            // Set default headers
+            const headers = {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
                 'Expires': '0'
-            });
+            };
+            
+            // Determine content type with proper MIME type and charset
+            let finalContentType = contentType;
+            
+            // Special handling for JavaScript files
+            if (ext === '.js' || ext === '.mjs' || ext === '.cjs') {
+                // For all JavaScript files, use application/javascript
+                finalContentType = 'application/javascript';
+                
+                // For admin scripts, ensure UTF-8 encoding
+                if (parsedUrl.pathname.includes('/js/admin/')) {
+                    finalContentType += '; charset=utf-8';
+                }
+            }
+            
+            // Add charset for text-based files if not already set
+            const charset = CHARSET_OVERRIDES[ext];
+            if (charset && !finalContentType.includes('charset=')) {
+                finalContentType = `${finalContentType}; charset=${charset}`;
+            }
+            
+            // Set the final content type
+            headers['Content-Type'] = finalContentType;
+            
+            res.writeHead(200, headers);
             res.end(content, 'utf-8');
         }
     });

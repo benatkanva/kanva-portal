@@ -40,10 +40,19 @@
     height: 100vh;
     background: white;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-    z-index: var(--z-modal);
+    z-index: 1039; /* Below modal backdrop */
     transition: right 0.3s ease;
     display: flex;
     flex-direction: column;
+}
+
+/* Ensure modals in admin panel appear above everything */
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+.modal {
+    z-index: 1050 !important;
 }
 
 .admin-panel.open {
@@ -557,52 +566,5 @@
     
     .admin-button i {
         display: none;
-    }
-}
-
-/* Dark Mode Support for AdminManager */
-@media (prefers-color-scheme: dark) {
-    #adminLoginModal .modal-content,
-    #adminPanel {
-        background: var(--color-dark, #1f2937);
-        color: var(--color-light, #f9fafb);
-        border-color: var(--color-border-dark, #374151);
-    }
-    
-    #adminLoginModal h3,
-    #adminPanel .admin-panel-header h3 {
-        color: var(--color-primary, #93D500);
-    }
-    
-    #adminLoginModal input[type="email"],
-    #adminLoginModal input[type="password"] {
-        background: var(--color-gray-dark, #374151);
-        border-color: var(--color-border-dark, #4b5563);
-        color: var(--color-light, #f9fafb);
-    }
-    
-    #adminLoginModal input[type="email"]:focus,
-    #adminLoginModal input[type="password"]:focus {
-        background: var(--color-gray-dark, #374151);
-        border-color: var(--color-primary, #93D500);
-    }
-    
-    #adminLoginModal .cancel-btn {
-        background: var(--color-gray-dark, #374151);
-        color: var(--color-light, #f9fafb);
-        border-color: var(--color-border-dark, #4b5563);
-    }
-    
-    #adminLoginModal .cancel-btn:hover {
-        background: var(--color-gray, #4b5563);
-    }
-    
-    #adminPanel .btn-close {
-        color: var(--color-text-light, #9ca3af);
-    }
-    
-    #adminPanel .btn-close:hover {
-        background: var(--color-gray-dark, #374151);
-        color: var(--color-light, #f9fafb);
     }
 }

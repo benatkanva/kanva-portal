@@ -1,28 +1,62 @@
 {
   "description": "Shipping rates based on display boxes and LTL percentages by zone",
-  "displayBoxesPerMasterCase": 12,
-  "masterCasesPerLayer": 11,
-  "halfPallet": 22,
-  "fullPallet": 56,
-  "standardShipping": {
-    "description": "Flat rate shipping for orders under master case quantities",
-    "perDisplayBox": {
-      "west": 8.50,
-      "mountain": 10.00,
-      "southwest": 12.50,
-      "midwest": 15.00,
-      "southeast": 17.50,
-      "northeast": 20.00,
-      "remote": 25.00
+  "palletParameters": {
+    "unitsPerDisplayBox": 12,
+    "displayBoxesPerMasterCase": 12,
+    "masterCasesPerLayer": 11,
+    "halfPallet": 22,
+    "fullPallet": 56,
+    "groundShippingThreshold": 11
+  },
+  "groundShipping": {
+    "description": "Ground shipping rates for orders under 11 master cases",
+    "zones": {
+      "zone1": {
+        "name": "Zone 1",
+        "states": ["CA", "NV", "OR", "WA", "ID", "AZ", "UT"],
+        "color": "#dc2626"
+      },
+      "zone2": {
+        "name": "Zone 2", 
+        "states": ["MT", "WY", "CO", "NM", "TX", "OK", "KS", "NE"],
+        "color": "#f59e0b"
+      },
+      "zone3": {
+        "name": "Zone 3",
+        "states": ["AR", "LA", "MS", "ND", "SD", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH"],
+        "color": "#3b82f6"
+      },
+      "zone4": {
+        "name": "Zone 4",
+        "states": ["AL", "TN", "KY", "WV", "VA", "NC", "SC", "GA", "FL", "ME", "NH", "VT", "MA", "RI", "CT", "NY", "NJ", "PA", "DE", "MD", "DC", "AK", "HI"],
+        "color": "#10b981"
+      }
     },
-    "baseRate": {
-      "west": 15.00,
-      "mountain": 18.00,
-      "southwest": 22.00,
-      "midwest": 25.00,
-      "southeast": 28.00,
-      "northeast": 32.00,
-      "remote": 40.00
+    "rates": {
+      "1-3boxes": {
+        "zone1": 5.00,
+        "zone2": 10.00,
+        "zone3": 10.00,
+        "zone4": 15.00
+      },
+      "4-8boxes": {
+        "zone1": 10.00,
+        "zone2": 10.00,
+        "zone3": 15.00,
+        "zone4": 20.00
+      },
+      "9-11boxes": {
+        "zone1": 10.00,
+        "zone2": 15.00,
+        "zone3": 20.00,
+        "zone4": 25.00
+      },
+      "1mastercase": {
+        "zone1": 20.00,
+        "zone2": 20.00,
+        "zone3": 25.00,
+        "zone4": 30.00
+      }
     }
   },
   "zones": {

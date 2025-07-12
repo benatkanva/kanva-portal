@@ -149,23 +149,4 @@
     }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .copper-ui {
-        background-color: var(--color-bg-light);
-        border-color: var(--color-border);
-    }
-    
-    .customer-details {
-        background-color: rgba(255, 255, 255, 0.03);
-        border-color: var(--color-border);
-    }
-    
-    .activity-item {
-        border-bottom-color: var(--color-border);
-    }
-    
-    .copper-actions {
-        border-top-color: var(--color-border);
-    }
-}
+

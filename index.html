@@ -22,6 +22,11 @@
     
     <!-- Modernizr for feature detection -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
     <!-- Loading State -->
@@ -162,6 +167,11 @@
             <div class="footer-logo">
                 <img src="/assets/logo/kanva-logo.png" alt="Kanva Botanicals" class="footer-logo-img">
             </div>
+            <div class="footer-links">
+                <button id="adminToggle" class="admin-button" title="Admin Panel">
+                    <i class="fas fa-cog"></i> Admin
+                </button>
+            </div>
             <div class="footer-copyright">
                 &copy; 2025 Kanva Botanicals. All rights reserved.
             </div>
@@ -181,6 +191,37 @@
         </div>
     </div>
 
+    <!-- Admin Button Styles -->
+    <style>
+        .footer-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .admin-button {
+            background: transparent;
+            border: 1px solid #93D500;
+            color: #93D500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .admin-button:hover {
+            background: rgba(147, 213, 0, 0.1);
+        }
+        
+        .admin-button i {
+            font-size: 1rem;
+        }
+    </style>
+    
     <!-- Scripts -->
     
     <!-- 1. Core Dependencies (must load first) -->
@@ -229,20 +270,67 @@
     <script src="js/calculator/multi-product.js?v=20250709"></script>
     <script src="js/ui/product-manager.js?v=20250709"></script>
     
-    <!-- 9. Admin Panel (depends on Kanva Calculator) -->
-    <script src="js/admin/admin-manager.js?v=20250709"></script>
-    <script src="js/admin/admin-dashboard.js?v=20250709"></script>
-    <script src="js/admin/admin-test.js?v=20250709"></script>
-    <script src="js/admin/integration-validator.js?v=20250709"></script>
+    <!-- 9. Admin Manager (load before app.js) -->
+    <script>
+        // Create kanva namespace if it doesn't exist
+        window.kanva = window.kanva || {};
+        
+        // Set a flag to track AdminManager loading
+        window.kanva.adminManagerLoading = new Promise((resolve) => {
+            console.log('🔄 [1/3] Starting AdminManager preload...');
+            
+            // Create script element for AdminManager
+            const adminScript = document.createElement('script');
+            
+            // Load the bundled version without module type to avoid MIME type issues
+            adminScript.src = './js/admin/admin-manager.js';
+            
+            adminScript.onload = function() {
+                console.log('✅ [2/3] AdminManager script loaded');
+                console.log('📌 AdminManager available in window:', !!window.AdminManager);
+                console.log('📌 AdminManager available in kanva namespace:', !!window.kanva.AdminManager);
+                
+                // Ensure AdminManager is properly exposed
+                if (window.kanva.AdminManager) {
+                    window.AdminManager = window.kanva.AdminManager;
+                    console.log('✅ AdminManager exposed to global scope');
+                }
+                
+                resolve(true);
+            };
+            
+            adminScript.onerror = function(error) {
+                console.error('❌ [2/3] Failed to load AdminManager:', error);
+                resolve(false);
+            };
+            
+            // Add to document head to start loading
+            document.head.appendChild(adminScript);
+        });
+        
+        // Add AdminManager to window when loaded
+        window.kanva.adminManagerLoading.then((success) => {
+            if (success && (window.AdminManager || window.kanva.AdminManager)) {
+                console.log('✅ [3/3] AdminManager is ready');
+                window.dispatchEvent(new CustomEvent('adminManagerReady'));
+            } else {
+                console.error('❌ [3/3] AdminManager failed to load');
+            }
+        });
+    </script>
     
-    <!-- 10. CRM Integration (can load in parallel) -->
+    <!-- 10. Load main app -->
+    <script src="js/core/app.js?v=20250709"></script>
+    
+    <!-- 11. CRM Integration (can load in parallel) -->
     <script src="js/integrations/copper-crm.js?v=20250709"></script>
     <script src="js/ui/copper-ui.js?v=20250709"></script>
     
-    <!-- 11. Main Application (loads last) -->
+    <!-- 12. Debug Script -->
     <script>
         // Debug script to check global variables
         console.log('=== SCRIPT LOADING DEBUG ===');
+        console.log('KanvaApp defined:', typeof KanvaApp !== 'undefined' ? '✅' : '❌');
         console.log('DataManager defined:', typeof DataManager !== 'undefined' ? '✅' : '❌');
         console.log('CalculationEngine defined:', typeof CalculationEngine !== 'undefined' ? '✅' : '❌');
         console.log('EventManager defined:', typeof EventManager !== 'undefined' ? '✅' : '❌');
@@ -250,21 +338,28 @@
         console.log('AdminManager defined:', typeof AdminManager !== 'undefined' ? '✅' : '❌');
         console.log('KanvaCalculator defined:', typeof KanvaCalculator !== 'undefined' ? '✅' : '❌');
         console.log('================================');
+        
+        // Log when AdminManager is loaded
+        if (typeof AdminManager !== 'undefined') {
+            console.log('✅ AdminManager loaded successfully');
+        } else {
+            console.warn('⚠️ AdminManager not loaded yet');
+        }
     </script>
-    <script src="js/core/app.js?v=20250709"></script>
-
-    <!-- Cache Buster Script -->
-    <script src="js/admin/cache-buster.js?v=20250709"></script>
     
-    <!-- Debug Script (Remove in production) -->
-    <script src="debug-delete.js"></script>
-
-    <!-- Initialize Application -->
+    <!-- 13. Initialize Application -->
     <script>
         // Global error handler
         window.addEventListener('error', (e) => {
             console.error('🚨 Global error:', e.error);
         });
+        
+        // Log when AdminManager is loaded
+        if (typeof AdminManager !== 'undefined') {
+            console.log('✅ AdminManager loaded successfully');
+        } else {
+            console.warn('⚠️ AdminManager not loaded yet');
+        }
 
         // Wait for DOM and initialize
         document.addEventListener('DOMContentLoaded', async () => {

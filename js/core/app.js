@@ -11,6 +11,20 @@ class KanvaApp {
         this.version = '1.0.0';
         this.modules = {};
         this.isInitialized = false;
+        
+        // Bind methods
+        this.initialize = this.initialize.bind(this);
+        this.detectEnvironment = this.detectEnvironment.bind(this);
+        this.initializeCopperIntegration = this.initializeCopperIntegration.bind(this);
+        this.initializeCoreModules = this.initializeCoreModules.bind(this);
+        this.initializeUI = this.initializeUI.bind(this);
+        this.setupEventListeners = this.setupEventListeners.bind(this);
+        this.performInitialCalculations = this.performInitialCalculations.bind(this);
+        this.initializeAdminPanel = this.initializeAdminPanel.bind(this);
+        this.handleAdminButtonClick = this.handleAdminButtonClick.bind(this);
+        this.checkAdminManager = this.checkAdminManager.bind(this);
+        this.showError = this.showError.bind(this);
+        this.handleInitializationError = this.handleInitializationError.bind(this);
     }
 
     /**
@@ -139,50 +153,167 @@ class KanvaApp {
             console.warn('❌ MultiProductManager not found');
         }
         
-        // Admin Manager - Initialize only if available
-        try {
-            if (typeof AdminManager === 'function' && this.calculator) {
-                console.log('🛠️ Initializing AdminManager...');
-                this.modules.admin = new AdminManager({
-                    calculator: this.calculator,
-                    dataManager: this.modules.dataManager
-                });
-                // Note: We'll initialize the AdminManager asynchronously in initializeAdminPanel()
-                console.log('✅ AdminManager instance created (will be initialized later)');
-            } else {
-                console.warn('⚠️ AdminManager not available yet, will retry during admin panel initialization');
+        // Admin Manager - Simplified initialization
+        const initAdminManager = async () => {
+            console.log('🔄 Initializing AdminManager...');
+            
+            const adminButton = document.getElementById('adminToggle');
+            
+            // Handle admin button click
+            async function handleAdminButtonClick(e) {
+                e.preventDefault();
+                console.log('🖱️ Admin button clicked');
+                
+                try {
+                    // Check if AdminManager is available in window.kanva
+                    if (!window.kanva || !window.kanva.AdminManager) {
+                        console.log('🔄 Waiting for AdminManager to be ready...');
+                        await new Promise((resolve) => {
+                            const checkAdminManager = () => {
+                                if (window.kanva?.AdminManager) {
+                                    console.log('✅ AdminManager is now available');
+                                    resolve();
+                                } else {
+                                    console.log('⏳ Still waiting for AdminManager...');
+                                    setTimeout(checkAdminManager, 100);
+                                }
+                            };
+                            checkAdminManager();
+                        });
+                    }
+                    
+                    // Initialize AdminManager if needed
+                    if (!this.adminManager) {
+                        console.log('🔧 Creating new AdminManager instance...');
+                        this.adminManager = new window.kanva.AdminManager({
+                            calculator: window.calculator,
+                            dataManager: this.dataManager
+                        });
+                        
+                        await this.adminManager.init();
+                        console.log('✅ AdminManager initialized successfully');
+                    }
+                    
+                    // Show admin panel
+                    if (typeof this.adminManager.showAdminPanel === 'function') {
+                        console.log('🖥️ Showing admin panel...');
+                        await this.adminManager.showAdminPanel();
+                    } else {
+                        throw new Error('showAdminPanel method not found on AdminManager');
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to initialize AdminManager:', error);
+                    // Show error to user
+                    if (window.NotificationManager) {
+                        window.NotificationManager.showError(
+                            'Admin Panel Error', 
+                            'Failed to load admin panel. Please check console for details.'
+                        );
+                    }
+                }
             }
+            
+            // Attach click handler if button exists
+            if (adminButton) {
+                console.log('🔘 Found admin button, attaching click handler...');
+                adminButton.addEventListener('click', this.handleAdminButtonClick.bind(this));
+                adminButton.style.display = 'block';
+            } else {
+                console.warn('⚠️ Admin button not found in the DOM');
+            }
+            
+            console.log('✅ AdminManager setup complete');
+            
         } catch (error) {
-            console.error('❌ Error creating AdminManager instance:', error);
-            // Don't fail the whole app if admin fails to initialize
+            console.error('❌ Error initializing AdminManager instance:', {
+                error: error,
+                message: error.message,
+                stack: error.stack
+            });
+            
+            // Show error to user if NotificationManager is available
+            if (window.NotificationManager) {
+                window.NotificationManager.showError(
+                    'Admin Initialization Error',
+                    'Failed to initialize admin panel. Please check console for details.'
+                );
+            }
+        }
+    }
+    
+    /**
+     * Handle admin button click
+     */
+    async handleAdminButtonClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🖱️ Admin button clicked');
+        
+        // Check if we have the admin module initialized
+        if (!this.modules?.admin) {
+            console.warn('⚠️ Admin module not initialized, trying to initialize...');
+            await this.initializeAdminPanel();
+            
+            if (!this.modules?.admin) {
+                console.error('❌ Admin module still not available after initialization attempt');
+                return;
+            }
+        }
+        
+        // Toggle admin panel
+        if (typeof this.modules.admin.toggleAdminPanel === 'function') {
+            this.modules.admin.toggleAdminPanel();
+        }
+    }
+    
+    /**
+     * Check if AdminManager is available
+     */
+    checkAdminManager() {
+        return !!window.kanva?.AdminManager;
+    }
+    
+    /**
+     * Initialize core modules
+     */
+    async initializeCoreModules() {
+        console.log('⚙️ Initializing core modules...');
+        
+        // Initialize CSS Loader first if available
+        if (typeof window.CSSLoader !== 'undefined') {
+            window.CSSLoader.initialize();
+            console.log('✅ CSSLoader initialized');
+        } else {
+            console.warn('❌ CSSLoader not found - UI styling may be affected');
         }
         
         // Order Details Manager
-        if (typeof OrderDetailsManager !== 'undefined') {
-            this.modules.orderDetails = new OrderDetailsManager();
-            console.log('✅ OrderDetailsManager initialized');
-        } else {
-            console.warn('❌ OrderDetailsManager not found');
-        }
-        
-        // Email Generator
-        if (typeof EmailGenerator !== 'undefined') {
-            this.modules.email = EmailGenerator;
-            console.log('✅ EmailGenerator initialized');
-        } else {
-            console.warn('❌ EmailGenerator not found');
-        }
-        
-        // Initialize the calculator
-        if (typeof KanvaCalculator !== 'undefined') {
-            this.calculator = new KanvaCalculator();
-            await this.calculator.init();
-            console.log('✅ Calculator initialized');
-        } else {
-            console.error('❌ KanvaCalculator not found - critical error');
-            throw new Error('Failed to initialize calculator');
-        }
+    if (typeof OrderDetailsManager !== 'undefined') {
+        this.modules.orderDetails = new OrderDetailsManager();
+        console.log('✅ OrderDetailsManager initialized');
+    } else {
+        console.warn('❌ OrderDetailsManager not found');
     }
+    
+    // Email Generator
+    if (typeof EmailGenerator !== 'undefined') {
+        this.modules.email = EmailGenerator;
+        console.log('✅ EmailGenerator initialized');
+    } else {
+        console.warn('❌ EmailGenerator not found');
+    }
+    
+    // Initialize the calculator
+    if (typeof KanvaCalculator !== 'undefined') {
+        this.calculator = new KanvaCalculator();
+        await this.calculator.init();
+        console.log('✅ Calculator initialized');
+    } else {
+        console.error('❌ KanvaCalculator not found - critical error');
+        throw new Error('Failed to initialize calculator');
+    }
+}
 
     /**
      * Initialize UI components
@@ -361,54 +492,200 @@ class KanvaApp {
     /**
      * Initialize admin panel
      */
+    /**
+     * Initialize admin panel with enhanced AdminManager loading
+     */
     async initializeAdminPanel() {
-        console.log('🔧 Initializing admin panel...');
+        console.log('🔧 [1/5] initializeAdminPanel called');
         
         try {
-            // Check if admin access is enabled via URL parameter or token
-            const urlParams = new URLSearchParams(window.location.search);
-            const hasAdminParam = urlParams.has('admin');
-            const hasAdminToken = localStorage.getItem('kanvaAdminToken') || sessionStorage.getItem('kanva_admin_token');
-            const isDevMode = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            // Check for admin access
+            const hasAdminAccess = await this.checkAdminAccess();
+            if (!hasAdminAccess) {
+                console.log('🔒 [2/5] No admin access detected, skipping admin panel initialization');
+                return;
+            }
             
-            if (hasAdminParam || hasAdminToken || isDevMode) {
-                console.log('🔒 Admin access detected');
+            console.log('🔒 [3/5] Admin access detected - initializing...');
+            
+            // Wait for AdminManager to be available
+            const adminManager = await this.ensureAdminManager();
+            if (!adminManager) {
+                console.error('❌ [4/5] Failed to initialize AdminManager');
+                return;
+            }
+            
+            console.log('✅ [5/5] Admin panel initialization complete');
+            
+        } catch (error) {
+            console.error('❌ Error in initializeAdminPanel:', error);
+        }
+    }
+    
+    /**
+     * Check if admin access is granted
+     */
+    async checkAdminAccess() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasAdminParam = urlParams.has('admin');
+        const hasAdminToken = localStorage.getItem('kanvaAdminToken') || 
+                            sessionStorage.getItem('kanva_admin_token') || 
+                            sessionStorage.getItem('kanva_admin_email');
+        const isDevMode = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.hostname === '';
+        
+        console.log('🔍 [2/5] Admin access check:', {
+            hasAdminParam,
+            hasAdminToken: !!hasAdminToken,
+            isDevMode,
+            hostname: window.location.hostname
+        });
+        
+        return hasAdminParam || hasAdminToken || isDevMode;
+    }
+    
+    /**
+     * Ensure AdminManager is properly loaded and initialized
+     */
+    async ensureAdminManager() {
+        // Wait for AdminManager to be ready
+        if (window.kanva?.adminManagerLoading) {
+            console.log('⏳ [3.1/5] Waiting for AdminManager to load...');
+            await window.kanva.adminManagerLoading;
+        }
+        
+        // Check if AdminManager is available in window.kanva namespace
+        const AdminManager = window.kanva?.AdminManager;
+        if (typeof AdminManager !== 'function') {
+            console.error('❌ [3.2/5] AdminManager not found in window.kanva');
+            return null;
+        }
+        
+        // Initialize AdminManager if not already done
+        if (!this.modules.admin) {
+            console.log('🔄 [3.3/5] Creating new AdminManager instance...');
+            try {
+                this.modules.admin = new AdminManager({
+                    calculator: this.calculator,
+                    dataManager: this.modules.dataManager
+                });
+                console.log('✅ [3.4/5] AdminManager instance created');
+            } catch (error) {
+                console.error('❌ [3.4/5] Failed to create AdminManager instance:', error);
+                return null;
+            }
+        }
+        
+        // Initialize AdminManager if available
+        if (this.modules.admin && typeof this.modules.admin.init === 'function') {
+            console.log('⚙️ [3.5/5] Initializing AdminManager...');
+            try {
+                await this.modules.admin.init();
+                console.log('✅ [3.6/5] AdminManager initialized successfully');
                 
-                // Initialize AdminManager if not already done
-                if (!this.modules.admin && typeof AdminManager === 'function') {
-                    console.log('🔄 Creating AdminManager instance...');
-                    this.modules.admin = new AdminManager({
-                        calculator: this.calculator,
-                        dataManager: this.modules.dataManager
-                    });
+                // Show admin button if the method exists
+                if (typeof this.modules.admin.showAdminButton === 'function') {
+                    console.log('👆 [3.7/5] Showing admin button...');
+                    this.modules.admin.showAdminButton();
                 }
                 
-                // Initialize AdminManager asynchronously
-                if (this.modules.admin && typeof this.modules.admin.init === 'function') {
-                    console.log('⚙️ Initializing AdminManager...');
-                    await this.modules.admin.init();
-                    
-                    console.log('✅ AdminManager initialized successfully');
-                } else {
-                    console.warn('⚠️ AdminManager not available or missing init method');
-                }
+                return this.modules.admin;
                 
-                // Show admin button if hidden
+            } catch (initError) {
+                console.error('❌ [3.6/5] Error initializing AdminManager:', {
+                    error: initError,
+                    message: initError.message,
+                    stack: initError.stack
+                });
+                return null;
+            }
+        }
+                
+                // Show admin button if hidden (legacy approach)
                 const adminBtn = document.getElementById('adminToggle');
                 if (adminBtn) {
+                    console.log('👆 [4/5] Showing legacy admin button');
                     adminBtn.style.display = 'inline-block';
+                    
+                    // Ensure click handler is attached
+                    const handleAdminButtonClick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🖱️ Legacy admin button clicked');
+                        
+                        // Check if we have the admin module initialized
+                        if (!this.modules || !this.modules.admin) {
+                            console.warn('⚠️ Admin module not initialized');
+                            
+                            // Try to initialize it on demand
+                            if (window.AdminManager) {
+                                console.log('🔄 Initializing AdminManager on demand...');
+                                this.modules = this.modules || {};
+                                this.modules.admin = new window.AdminManager({
+                                    calculator: this.calculator,
+                                    dataManager: this.modules.dataManager
+                                });
+                                
+                                // Initialize and then toggle
+                                this.modules.admin.init().then(() => {
+                                    console.log('✅ AdminManager initialized on demand');
+                                    this.modules.admin.toggleAdminPanel();
+                                }).catch(error => {
+                                    console.error('❌ Failed to initialize AdminManager on demand:', error);
+                                });
+                                return false;
+                            }
+                            
+                            console.warn('⚠️ AdminManager not available in global scope');
+                            return false;
+                        }
+                        
+                        // Check if toggleAdminPanel exists
+                        if (typeof this.modules.admin.toggleAdminPanel === 'function') {
+                            console.log('🔄 Toggling admin panel...');
+                            this.modules.admin.toggleAdminPanel();
+                        } else {
+                            console.warn('⚠️ toggleAdminPanel method not found on AdminManager instance');
+                            console.log('Available methods:', Object.keys(this.modules.admin).filter(key => typeof this.modules.admin[key] === 'function'));
+                            
+                            // Fallback to showing the admin panel directly
+                            if (typeof this.modules.admin.showAdminPanel === 'function') {
+                                console.log('🔄 Falling back to showAdminPanel...');
+                                this.modules.admin.showAdminPanel();
+                            } else {
+                                console.error('❌ No admin panel methods available');
+                            }
+                        }
+                        
+                        return false;
+                    };
+                    
+                    // Attach the click handler
+                    adminBtn.addEventListener('click', handleAdminButtonClick);
+                } else {
+                    console.log('ℹ️ [4/5] No legacy admin button found');
                 }
                 
-                // Show admin panel if it exists
-                const adminPanel = document.getElementById('adminPanel');
-                if (adminPanel) {
-                    adminPanel.classList.add('show');
-                }
+                console.log('✅ [5/5] Admin panel initialization complete');
             } else {
-                console.log('👤 Admin access not requested');
+                console.log('👤 [2/5] Admin access not requested');
             }
         } catch (error) {
-            console.error('❌ Failed to initialize admin panel:', error);
+            console.error('❌ [5/5] Failed to initialize admin panel:', {
+                error: error,
+                message: error.message,
+                stack: error.stack
+            });
+            
+            // Show error to user if possible
+            const errorMessage = 'Failed to initialize admin panel. Please check console for details.';
+            if (this.showError) {
+                this.showError(errorMessage);
+            } else {
+                console.error('⚠️ showError method not available');
+                alert(errorMessage);
+            }
         }
     }
 
@@ -424,6 +701,7 @@ class KanvaApp {
             // Fallback to alert if notifications aren't available
             alert(`Error: ${message}`);
         }
+    }
     }
 
     /**
@@ -597,6 +875,11 @@ handleInitializationError(error) {
 
 // Create the application instance
 const app = new KanvaApp();
+console.log('✅ KanvaApp instance created:', { 
+    version: app.version,
+    isInitialized: app.isInitialized,
+    constructor: app.constructor.name
+});
 
 // Make available globally
 if (typeof window !== 'undefined') {
@@ -934,14 +1217,42 @@ async function openAdminModal() {
 
 // Make classes and functions globally available
 if (typeof window !== 'undefined') {
-    window.KanvaApp = KanvaApp;
-    window.handleAdminAccess = handleAdminAccess;
-    window.openAdminModal = openAdminModal;
-    console.log('✅ Global app components assigned:', {
-        KanvaApp: typeof window.KanvaApp,
-        handleAdminAccess: typeof window.handleAdminAccess,
-        openAdminModal: typeof window.openAdminModal
-    });
+    // Double-check if KanvaApp is defined before assigning
+    if (typeof KanvaApp === 'undefined') {
+        console.warn('KanvaApp is not defined');
+    } else {
+        // Make KanvaApp globally available
+        window.KanvaApp = KanvaApp;
+        
+        // Initialize the app when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new KanvaApp();
+            window.kanva = window.kanva || {};
+            window.kanva.app = app;
+            
+            // Initialize the app
+            app.initialize().catch(error => {
+                console.error('Failed to initialize app:', error);
+                
+                // Show error in UI if possible
+                const errorContainer = document.createElement('div');
+                errorContainer.style.padding = '20px';
+                errorContainer.style.color = '#721c24';
+                errorContainer.style.backgroundColor = '#f8d7da';
+                errorContainer.style.border = '1px solid #f5c6cb';
+                errorContainer.style.borderRadius = '4px';
+                errorContainer.style.margin = '20px';
+                errorContainer.innerHTML = `
+                    <h3>Application Error</h3>
+                    <p>${error.message || 'An unknown error occurred during initialization.'}</p>
+                    <p>Please check the browser console for more details.</p>
+                `;
+                
+                const appContainer = document.getElementById('app') || document.body;
+                appContainer.prepend(errorContainer);
+            });
+        });
+    }
 }
 
 // Export for module systems

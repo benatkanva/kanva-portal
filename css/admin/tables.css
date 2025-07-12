@@ -147,38 +147,4 @@
     opacity: 1;
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .table {
-        color: var(--color-text);
-        background-color: var(--color-bg-light);
-    }
-    
-    .table th,
-    .table td {
-        border-top-color: var(--color-border);
-    }
-    
-    .table thead th {
-        border-bottom-color: var(--color-border);
-        background-color: var(--color-bg);
-    }
-    
-    .table tbody + tbody {
-        border-top-color: var(--color-border);
-    }
-    
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-    
-    .table-hover tbody tr:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    .table-bordered,
-    .table-bordered th,
-    .table-bordered td {
-        border-color: var(--color-border);
-    }
-}
+

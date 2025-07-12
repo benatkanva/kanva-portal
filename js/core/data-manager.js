@@ -504,8 +504,32 @@ class DataManager {
         console.log(`👤 Admin status: ${this.adminStatus}`);
     }
 
-    getData() {
-        return this.data;
+    /**
+     * Get specific data by key
+     * @param {string} [key] - Optional key to get specific data (products, tiers, shipping)
+     * @returns {Object|Promise<Object>} The requested data
+     */
+    async getData(key) {
+        // If no data loaded yet, load it first
+        if (!this.data || Object.keys(this.data).length === 0) {
+            await this.loadAllData();
+        }
+        
+        if (!key) {
+            return this.data;
+        }
+        
+        // Return specific data based on key
+        switch (key) {
+            case 'products':
+                return this.products || this.data.products || {};
+            case 'tiers':
+                return this.tiers || this.data.tiers || {};
+            case 'shipping':
+                return this.shipping || this.data.shipping || {};
+            default:
+                return this.data[key] || null;
+        }
     }
 
     isAdmin() {

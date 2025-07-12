@@ -1,5 +1,7 @@
-{
-  "focus": {
+[
+  {
+    "id": 1,
+    "key": "focus",
     "name": "Focus+Flow",
     "price": 4.5,
     "msrp": 9.99,
@@ -21,14 +23,17 @@
       "width": 5,
       "height": 7,
       "weight": 3.5
-    }
+    },
+    "active": true
   },
-  "release": {
+  {
+    "id": 2,
+    "key": "release",
     "name": "Release+Relax",
     "price": 4.5,
     "msrp": 9.99,
-    "unitsPerCase": 96,
-    "displayBoxesPerCase": 8,
+    "unitsPerCase": 144,
+    "displayBoxesPerCase": 12,
     "unitsPerDisplayBox": 12,
     "description": "Kanna + Kava blend for stress relief",
     "category": "2oz_wellness",
@@ -45,9 +50,12 @@
       "width": 5,
       "height": 7,
       "weight": 3.5
-    }
+    },
+    "active": true
   },
-  "zoom": {
+  {
+    "id": 3,
+    "key": "zoom",
     "name": "Kanva Zoom",
     "price": 3.2,
     "msrp": 6.99,
@@ -69,9 +77,12 @@
       "width": 4,
       "height": 5,
       "weight": 2
-    }
+    },
+    "active": true
   },
-  "mango": {
+  {
+    "id": 4,
+    "key": "mango",
     "name": "Mango Extract",
     "price": 4.25,
     "msrp": 11.99,
@@ -93,9 +104,12 @@
       "width": 5,
       "height": 7,
       "weight": 3.5
-    }
+    },
+    "active": true
   },
-  "raw": {
+  {
+    "id": 5,
+    "key": "raw",
     "name": "Raw+Releaf",
     "price": 4.5,
     "msrp": 9.99,
@@ -117,6 +131,7 @@
       "width": 5,
       "height": 7,
       "weight": 3.5
-    }
+    },
+    "active": true
   }
-}
+]

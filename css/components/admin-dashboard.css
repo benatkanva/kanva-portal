@@ -1173,62 +1173,7 @@
     animation: fadeIn 0.5s ease;
 }
 
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-    .admin-dashboard-content {
-        background: #1a1a1a;
-        color: #e0e0e0;
-    }
-    
-    .admin-section {
-        background: #2a2a2a;
-        border-color: #444;
-    }
-    
-    .product-card,
-    .tier-card,
-    .shipping-zone-card,
-    .integration-card,
-    .settings-card {
-        background: #2a2a2a;
-        border-color: #444;
-        color: #e0e0e0;
-    }
-    
-    .form-control {
-        background: #333;
-        border-color: #555;
-        color: #e0e0e0;
-    }
-    
-    .form-control:focus {
-        border-color: #93D500;
-        background: #333;
-    }
-    
-    .table {
-        background: #2a2a2a;
-        color: #e0e0e0;
-    }
-    
-    .table th {
-        background: #333;
-        border-color: #555;
-    }
-    
-    .table td {
-        border-color: #444;
-    }
-    
-    .table tbody tr:hover {
-        background: #333;
-    }
-    
-    .notification {
-        background: #2a2a2a;
-        color: #e0e0e0;
-    }
-}
+
 
 /* Print Styles */
 @media print {
